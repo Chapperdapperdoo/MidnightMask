@@ -309,8 +309,16 @@ function cellOff(d,s){
 }
 function px(scale){return {hw:W/2*scale, hh:H/2*scale};}
 function theme(){ return THEMES[G.floor]||THEMES[0]; }
+function frontConnected(z,s){
+ if(s===0) return true;
+ for(var zz=0; zz<=z; zz++){
+  var c=cellOff(zz,s);
+  if(!isWall(c[0],c[1])) return false;
+ }
+ return true;
+}
 
-function drawFront(sc,s,a,t){
+function drawFront(sc,s,a,t,connected){
  var th=theme();
  var p=px(sc), cx=W/2, cy=H/2;
  var x=cx + s*2*p.hw - p.hw, y=cy-p.hh;
@@ -321,7 +329,7 @@ function drawFront(sc,s,a,t){
  CTX.globalAlpha=a*0.3;
  CTX.beginPath(); CTX.moveTo(x,cy); CTX.lineTo(x+p.hw*2,cy); CTX.stroke();
  CTX.globalAlpha=1;
- decorFront(th.decor,x,y,p.hw*2,p.hh*2,a,t);
+ if(connected) decorFront(th.decor,x,y,p.hw*2,p.hh*2,a,t);
 }
 function drawSide(sgn,near,far,a,t){
  var th=theme();
@@ -433,7 +441,7 @@ function draw3D(t){
   var a=Math.max(0.16, 1-z*0.24);
   for(var s=-1;s<=1;s++){
    var fc=cellOff(z+1,s);
-   if(mapAt(G.floor,fc[0],fc[1])==='#') drawFront(SCL[z+1],s,a*0.85,t);
+   if(mapAt(G.floor,fc[0],fc[1])==='#') drawFront(SCL[z+1],s,a*0.85,t,frontConnected(z,s));
   }
   var sides=[-1,1];
   for(var i=0;i<2;i++){
