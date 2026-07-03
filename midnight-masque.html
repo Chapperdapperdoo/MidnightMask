@@ -568,13 +568,28 @@ function drawTitle(t){
   CTX.fillText('\u2014 choose below \u2014',W/2,300);
  }
 }
+var BATTLE_TRANS_MS=420;
 function drawBattle(t){
+ var ease=1, animating=false;
+ if(B && B.transStart!=null){
+  var prog=(t-B.transStart)/BATTLE_TRANS_MS;
+  if(prog>=1){ prog=1; B.transStart=null; } else animating=true;
+  ease=1-Math.pow(1-prog,3);
+ }
+ CTX.fillStyle='#000'; CTX.fillRect(0,0,W,H);
+ CTX.save();
+ if(animating){
+  var sc=0.3+0.7*ease;
+  CTX.globalAlpha=Math.min(1,ease*1.4);
+  CTX.translate(W/2,H/2); CTX.scale(sc,sc); CTX.translate(-W/2,-H/2);
+ }
  var g=CTX.createRadialGradient(W/2,H/2,40,W/2,H/2,300);
  g.addColorStop(0,'#0d1024'); g.addColorStop(1,'#03040a');
  CTX.fillStyle=g; CTX.fillRect(0,0,W,H);
  CTX.strokeStyle='#1c2440'; CTX.beginPath(); CTX.moveTo(0,242); CTX.lineTo(W,242); CTX.stroke();
+ CTX.strokeStyle='#5a7db8'; CTX.lineWidth=2; CTX.strokeRect(1,1,W-2,H-2);
  drawMoonHud();
- if(!B) return;
+ if(!B){ CTX.restore(); return; }
  var foes=[];
  for(var i=0;i<B.foes.length;i++) if(!B.foes[i].gone) foes.push(B.foes[i]);
  var n=foes.length;
@@ -608,6 +623,7 @@ function drawBattle(t){
   if(fo.flash>0) fo.flash-=0.06;
   CTX.restore();
  }
+ CTX.restore();
 }
 function drawVelvet(t){
  var g=CTX.createLinearGradient(0,0,0,H);
@@ -1082,7 +1098,7 @@ function queueCmd(cmd){
  else renderAll();
 }
 function ctlBattle(top){
- if(B&&B.running){ el('ctl').innerHTML=''; el('hint').textContent='\u2014'; return; }
+ if(B&&(B.running||B.transStart!=null)){ el('ctl').innerHTML=''; el('hint').textContent='\u2014'; return; }
  if(!top) top={t:'main'};
  if(top.t==='skill'){ ctlSkill(top); return; }
  if(top.t==='target'){ ctlTarget(top); return; }
@@ -1437,19 +1453,21 @@ function makeFoe(name,i){
 function startBattle(){
  drone(false);
  var names=randomPack();
- B={foes:[],cmds:[],ci:0,running:false,boss:false,fled:false};
+ B={foes:[],cmds:[],ci:0,running:false,boss:false,fled:false,transStart:performance.now()};
  for(var i=0;i<names.length;i++) B.foes.push(makeFoe(names[i],i));
  MODE='battle'; UI=[{t:'main'}]; LOGS=[];
  var label = names.length>1 ? names.join(', ') : names[0];
  log('Shapes rise from the dark: '+label+'.');
  renderAll();
+ setTimeout(function(){ if(B) renderAll(); }, BATTLE_TRANS_MS+40);
 }
 function bossIntro(){
  drone(false);
- B={foes:[makeFoe('Moon Sovereign',0)],cmds:[],ci:0,running:false,boss:true,fled:false};
+ B={foes:[makeFoe('Moon Sovereign',0)],cmds:[],ci:0,running:false,boss:true,fled:false,transStart:performance.now()};
  MODE='battle'; UI=[{t:'main'}]; LOGS=[];
  log('The gate breathes. A voice like frost: "LITTLE MASKS. YOU CAME."');
  renderAll();
+ setTimeout(function(){ if(B) renderAll(); }, BATTLE_TRANS_MS+40);
 }
 
 /* ============ TITLE / END ============ */
