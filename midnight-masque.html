@@ -57,6 +57,9 @@ button.efire{border-color:#7a3520;color:#ffb08a;background:#1a0d0a;}
 button.eice{border-color:#234a66;color:#9fe0ff;background:#0a1620;}
 button.eelec{border-color:#6a5a1a;color:#f0e08a;background:#1a1608;}
 button.ewind{border-color:#1f6a4a;color:#9be8c0;background:#0a1810;}
+button.dpad{text-align:center;padding-left:6px;font-size:18px;min-height:44px;}
+button.dpad.ctr{font-size:11px;letter-spacing:.4px;}
+button.ghost{visibility:hidden;pointer-events:none;}
 .hint{font-size:11px;color:var(--dim);text-align:center;letter-spacing:1px;min-height:14px;padding-bottom:10px;}
 </style>
 </head>
@@ -1240,27 +1243,22 @@ function ctlBattle(top){
  );
  el('hint').textContent=c.name+' \u00b7 '+c.masque+' '+mq(c).glyph+'  \u2014 choose an action';
 }
+function dpadBtn(c,dx,dy,lbl){
+ var nx=c.gx+dx, ny=c.gy+dy;
+ var ok=inBounds(nx,ny) && !occupantAt(nx,ny,c);
+ return btnEl(lbl, function(){
+   if(!ok){ log('No room to move there.'); return; }
+   queueCmd({kind:'move',dx:dx,dy:dy});
+ }, 'dpad'+(ok?'':' dis2'));
+}
 function ctlMoveDir(top){
  var c=nextCmdChar();
- var dirs=[
-  {lbl:'\u25b2 NORTH',dx:0,dy:-1},
-  {lbl:'\u25bc SOUTH',dx:0,dy:1},
-  {lbl:'\u25c0 WEST',dx:-1,dy:0},
-  {lbl:'\u25b6 EAST',dx:1,dy:0}
- ];
- var rws=[];
- for(var i=0;i<dirs.length;i++){
-  (function(d){
-   var nx=c.gx+d.dx, ny=c.gy+d.dy;
-   var ok=inBounds(nx,ny) && !occupantAt(nx,ny,c);
-   rws.push([ btnEl(d.lbl, function(){
-     if(!ok){ log('No room to move there.'); return; }
-     queueCmd({kind:'move',dx:d.dx,dy:d.dy});
-   }, ok?'small':'small dis2') ]);
-  })(dirs[i]);
- }
- rws.push([ btnEl('\u2716 BACK',function(){UI=[{t:'main'}];SFX.back();renderAll();},'red') ]);
- rows.apply(null,rws);
+ rows(
+  [ btnEl('',function(){},'dpad ghost'), dpadBtn(c,0,-1,'\u25b2'), btnEl('',function(){},'dpad ghost') ],
+  [ dpadBtn(c,-1,0,'\u25c0'), btnEl(c.name,function(){},'dpad ctr dis2'), dpadBtn(c,1,0,'\u25b6') ],
+  [ btnEl('',function(){},'dpad ghost'), dpadBtn(c,0,1,'\u25bc'), btnEl('',function(){},'dpad ghost') ],
+  [ btnEl('\u2716 BACK',function(){UI=[{t:'main'}];SFX.back();renderAll();},'red') ]
+ );
  el('hint').textContent='Move to an open cell \u2014 costs your turn.';
 }
 function ctlSkill(top){
