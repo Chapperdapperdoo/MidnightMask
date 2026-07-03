@@ -294,7 +294,7 @@ function drone(on){
 /* ============ CANVAS / RENDERING ============ */
 var CV=document.getElementById('cv'), CTX=CV.getContext('2d');
 var DEPTH=4;
-var SCL=[0.94,0.60,0.385,0.25,0.165];
+var SCL=[1,0.60,0.385,0.25,0.165];
 function fwd(d){return [[0,-1],[1,0],[0,1],[-1,0]][d];}
 function rightv(d){return fwd((d+1)%4);}
 function mapAt(f,x,y){
