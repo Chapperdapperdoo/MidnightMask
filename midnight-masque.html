@@ -28,6 +28,13 @@ html,body{margin:0;padding:0;background:var(--void);color:var(--ink);
 .hp i{background:linear-gradient(90deg,#8a1f2e,var(--blood));}
 .sp i{background:linear-gradient(90deg,#274a74,var(--spc));}
 .bnum{width:56px;text-align:right;color:var(--dim);}
+.sbar{display:flex;align-items:center;gap:6px;padding:2px 0;}
+.sbar .lbl{width:30px;color:var(--dim);font-size:11px;letter-spacing:.5px;}
+.sbar .val{width:24px;text-align:right;color:var(--dim);font-size:11px;}
+.sbar.str i{background:linear-gradient(90deg,#8a1f2e,var(--blood));}
+.sbar.mag i{background:linear-gradient(90deg,#3d2266,#9a6ad8);}
+.sbar.agi i{background:linear-gradient(90deg,#1f6a4a,#57d0a0);}
+.sbar.def i{background:linear-gradient(90deg,#274a74,var(--spc));}
 #log{background:var(--panel);border:1px solid var(--line);border-radius:3px;
   min-height:70px;padding:6px 10px;font-size:13px;line-height:1.45;}
 #log .l0{color:var(--ink);}
@@ -792,7 +799,7 @@ function refreshCtl(){
  else if(top.t==='mchar') ctlMasqChar(top);
  else if(top.t==='mpick') ctlMasqPick(top);
  else if(top.t==='cards') ctlCards();
- else if(top.t==='stats') ctlStats();
+ else if(top.t==='stats') ctlStats(top);
  else ctlDpad();
 }
 function ctlDpad(){
@@ -930,24 +937,38 @@ function elemList(arr){
  var out=[]; for(var i=0;i<arr.length;i++) out.push(ELN[arr[i]]);
  return out.join('/');
 }
-function ctlStats(){
- var rws=[];
+function statBarRow(cls,label,val,max){
+ var pct=Math.max(0,Math.min(100,Math.round(100*val/max)));
+ return '<div class="sbar '+cls+'"><span class="lbl">'+label+'</span>'
+  +'<div class="bar"><i style="width:'+pct+'%"></i></div>'
+  +'<span class="val">'+val+'</span></div>';
+}
+function statBarsHtml(c){
+ var max=30;
+ return statBarRow('str','STR',stat(c,'str'),max)
+  +statBarRow('mag','MAG',stat(c,'mag'),max)
+  +statBarRow('agi','AGI',stat(c,'agi'),max)
+  +statBarRow('def','DEF',charDef(c),max);
+}
+function ctlStats(top){
+ var idx=top.idx||0;
+ if(idx>=G.party.length) idx=0;
+ var c=G.party[idx], m=mq(c);
+ var tabs=[];
  for(var i=0;i<G.party.length;i++){
-  (function(c){
-   var m=mq(c);
-   rws.push([ btnEl(m.glyph+' '+c.name+(c.hp<=0?' (fallen)':'')+'  ·  L'+c.lv+'  ·  '+c.masque,
-     function(){},'small dis2') ]);
-   rws.push([ btnEl('HP '+Math.max(0,c.hp)+'/'+maxHp(c)+'   SP '+c.sp+'/'+maxSp(c)+'   XP '+c.xp+'/'+(c.lv*24),
-     function(){},'small dis2') ]);
-   rws.push([ btnEl('STR '+stat(c,'str')+'   MAG '+stat(c,'mag')+'   AGI '+stat(c,'agi')+'   DEF '+charDef(c),
-     function(){},'small dis2') ]);
-   rws.push([ btnEl('Resist '+elemList(m.res)+'   Weak '+elemList(m.weak),
-     function(){},'small dis2') ]);
-  })(G.party[i]);
+  (function(i){
+   tabs.push(btnEl(G.party[i].name,function(){top.idx=i;SFX.sel();renderAll();},i===idx?'small blue':'small dis2'));
+  })(i);
  }
- rws.push([ btnEl('✖ BACK',popUI,'red') ]);
- rows.apply(null,rws);
- el('hint').textContent='Stat bonuses from the worn masque are already folded in.';
+ rows(
+  tabs,
+  [ btnEl(m.glyph+' '+c.name+(c.hp<=0?' (fallen)':'')+'  ·  L'+c.lv+'  ·  '+c.masque,function(){},'small dis2') ],
+  [ btnEl('HP '+Math.max(0,c.hp)+'/'+maxHp(c)+'   SP '+c.sp+'/'+maxSp(c)+'   XP '+c.xp+'/'+(c.lv*24),function(){},'small dis2') ],
+  [ btnEl(statBarsHtml(c),function(){},'small dis2') ],
+  [ btnEl('Resist '+elemList(m.res)+'   Weak '+elemList(m.weak),function(){},'small dis2') ],
+  [ btnEl('✖ BACK',popUI,'red') ]
+ );
+ el('hint').textContent='Tap a name to switch party member.';
 }
 
 /* ============ AZURE ROOM ============ */
