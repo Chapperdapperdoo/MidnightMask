@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 MidnightMask is a single-file, dependency-free HTML5 dungeon-crawler game called
 **MIDNIGHT MASQUE** — a Shin Megami Tensei / Persona-style first-person catacomb
-crawl with turn-based battles, demon "contact"/persuasion, card fusion, and a
+crawl with turn-based battles, aspect "contact"/persuasion, card fusion, and a
 day/night (moon phase) cycle. The entire game — markup, CSS, and JS — lives in
 one file: `midnight-masque.html`. There is no other source code in this repo.
 
@@ -48,9 +48,9 @@ Game content is defined as plain object/array literals, not code — extend the
 game by editing these, not by writing new logic:
 - `SKILLS` — skill name → {cost, elem, pow, targ, type}
 - `MASQUES` — playable "persona" name → {glyph, skills, res, weak, b (stat bonuses)}
-- `DEMONS` — enemy/recruitable demon → {glyph, lv, hp, atk, def, agi, weak, res, pers, rank, elem}
-- `POOLS` — per-floor random encounter demon pools
-- `REACT` — demon personality → CONTACT action → emotion reaction table (persuasion mechanic)
+- `ASPECTS` — enemy/recruitable aspect → {glyph, lv, hp, atk, def, agi, weak, res, pers, rank, elem}
+- `POOLS` — per-floor random encounter aspect pools
+- `REACT` — aspect personality → CONTACT action → emotion reaction table (persuasion mechanic)
 - `ITEMS`, `MOONS`, `MAPS` (ASCII dungeon layouts per floor), `FLOOR_NAMES`, `CHEST_LOOT`
 
 ### Global state, not modules
@@ -87,16 +87,16 @@ chosen (`B.ci` tracks whose turn it is to pick). `resolveRound()` merges queued
 player commands with enemy actions, sorts all actors by speed
 (`agi + rnd(6)`), then steps through them one at a time with `setTimeout` for
 pacing (`doPlayer`/`doEnemy`). Elemental weak/resist multipliers are resolved in
-`hitFoe`/`hitChar` against each `DEMONS`/`MASQUES` entry's `weak`/`res` arrays.
+`hitFoe`/`hitChar` against each `ASPECTS`/`MASQUES` entry's `weak`/`res` arrays.
 
 CONTACT (persuasion) is a distinct SMT-style mechanic: `doContact()` looks up
-the demon's personality (`pers`) and the chosen verb in `REACT` to raise an
+the aspect's personality (`pers`) and the chosen verb in `REACT` to raise an
 emotion counter (`eager`/`happy`/`scared`/`angry`) on the foe; crossing a
 threshold ends the fight via recruit-card, coin gift, flee, or berserk — not
 damage. This is separate from the ATTACK/SKILL damage path.
 
 Card fusion (`fuseResult`/`doFuse` in the AZURE ROOM section) combines two
-demon cards by summed `rank` into a fixed masque outcome — it's a lookup by
+aspect cards by summed `rank` into a fixed masque outcome — it's a lookup by
 rank-sum thresholds, not a combinatorial recipe table.
 
 ### Persistence

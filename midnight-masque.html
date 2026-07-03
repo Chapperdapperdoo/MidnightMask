@@ -87,7 +87,7 @@ var MASQUES={
  'Hecate':{glyph:'\u70ac',skills:['Flame Lash','Mend All','Rekindle'],res:['fire','ice'],weak:[],b:{mag:5,sp:10}}
 };
 
-var DEMONS={
+var ASPECTS={
  'Slime':{glyph:'\u6ce5',lv:2,hp:30,atk:6,def:3,agi:3,weak:['fire'],res:['phys'],pers:'foolish',rank:1,elem:'phys'},
  'Pixie':{glyph:'\u5996',lv:2,hp:20,atk:7,def:2,agi:8,weak:['wind'],res:['elec'],pers:'timid',rank:1,elem:'elec'},
  'Goblin':{glyph:'\u9b3c',lv:3,hp:34,atk:8,def:4,agi:5,weak:['fire'],res:[],pers:'irritable',rank:2,elem:'phys'},
@@ -445,7 +445,7 @@ function drawTitle(t){
  CTX.fillStyle='#8fb0d8'; CTX.font='13px Georgia';
  CTX.fillText('a moonlit dungeon-crawl in the old style',W/2,212);
  CTX.fillStyle='#7a8199'; CTX.font='11px ui-monospace,Menlo,monospace';
- CTX.fillText('contact demons \u00b7 win their cards \u00b7 fuse your masques',W/2,238);
+ CTX.fillText('contact aspects \u00b7 win their cards \u00b7 fuse your masques',W/2,238);
  if(pulse>0.25){
   CTX.fillStyle='#c9d4ee'; CTX.font='13px ui-monospace,Menlo,monospace';
   CTX.fillText('\u2014 choose below \u2014',W/2,300);
@@ -474,7 +474,7 @@ function drawBattle(t){
   CTX.font='52px Georgia'; CTX.textAlign='center'; CTX.textBaseline='middle';
   CTX.fillStyle = fo.flash>0 ? '#ffffff' : (fo.berserk?'#ff8494':'#dfe7f7');
   CTX.shadowColor = fo.berserk?'#e0364a':'#5a7df0'; CTX.shadowBlur=14;
-  CTX.fillText(DEMONS[fo.sp].glyph, x, y);
+  CTX.fillText(ASPECTS[fo.sp].glyph, x, y);
   CTX.shadowBlur=0;
   CTX.font='11px ui-monospace,Menlo,monospace'; CTX.fillStyle='#aebbd8';
   CTX.fillText(fo.tag+' \u00b7 '+fo.sp+' L'+fo.lv, x, y+68);
@@ -607,7 +607,7 @@ function afterStep(){
  G.moonSteps++;
  if(G.moonSteps>=STEPS_PER_PHASE){
   G.moonSteps=0; G.moon=(G.moon+1)%8;
-  if(G.moon===4){ log('The FULL MOON rises. The demons will not listen now \u2014 only fight.'); SFX.moon(); }
+  if(G.moon===4){ log('The FULL MOON rises. The aspects will not listen now \u2014 only fight.'); SFX.moon(); }
   else log('The moon turns to '+MOONS[G.moon]+'.');
  }
  var c=mapAt(G.floor,G.x,G.y);
@@ -811,7 +811,7 @@ function ctlCards(){
  } else {
   for(var j=0;j<keys.length;j++){
    var k=keys[j];
-   rws.push([ btnEl(DEMONS[k].glyph+'  '+k+'  \u00d7'+counts[k]+'   \u00b7  rank '+DEMONS[k].rank,function(){},'small dis2') ]);
+   rws.push([ btnEl(ASPECTS[k].glyph+'  '+k+'  \u00d7'+counts[k]+'   \u00b7  rank '+ASPECTS[k].rank,function(){},'small dis2') ]);
   }
  }
  rws.push([ btnEl('\u2716 BACK',popUI,'red') ]);
@@ -840,7 +840,7 @@ function ctlVelvet(){
  );
  el('hint').textContent='Fusion consumes two cards and yields one masque.';
 }
-function cardLabel(k){ return DEMONS[k].glyph+' '+k+' (r'+DEMONS[k].rank+')'; }
+function cardLabel(k){ return ASPECTS[k].glyph+' '+k+' (r'+ASPECTS[k].rank+')'; }
 function ctlFuse(top){
  var rws=[];
  for(var i=0;i<G.cards.length;i++){
@@ -870,7 +870,7 @@ function ctlFuseB(top){
  el('hint').textContent='Choose the second card. Result shown at right.';
 }
 function fuseResult(ka,kb){
- var sum=DEMONS[ka].rank+DEMONS[kb].rank;
+ var sum=ASPECTS[ka].rank+ASPECTS[kb].rank;
  if(sum<=3) return 'Sylph';
  if(sum<=5) return 'Valkyrie';
  if(sum<=7) return 'Fenrir';
@@ -980,7 +980,7 @@ function ctlTarget(top){
  var foes=aliveFoes(), rws=[];
  for(var i=0;i<foes.length;i++){
   (function(fo){
-   rws.push([ btnEl(fo.tag+'  '+DEMONS[fo.sp].glyph+' '+fo.sp+'   '+Math.max(0,fo.hp)+' HP', function(){
+   rws.push([ btnEl(fo.tag+'  '+ASPECTS[fo.sp].glyph+' '+fo.sp+'   '+Math.max(0,fo.hp)+' HP', function(){
      if(top.mode==='attack') queueCmd({kind:'attack',target:fo});
      else queueCmd({kind:'skill',skill:top.skill,target:fo});
    }, 'small') ]);
@@ -1025,7 +1025,7 @@ function ctlContactTarget(top){
  for(var i=0;i<foes.length;i++){
   (function(fo){
    var can=!fo.berserk;
-   rws.push([ btnEl(fo.tag+'  '+DEMONS[fo.sp].glyph+' '+fo.sp+'  \u00b7 '+(fo.berserk?'berserk':DEMONS[fo.sp].pers), function(){
+   rws.push([ btnEl(fo.tag+'  '+ASPECTS[fo.sp].glyph+' '+fo.sp+'  \u00b7 '+(fo.berserk?'berserk':ASPECTS[fo.sp].pers), function(){
      if(!can){ log(fo.sp+' is berserk \u2014 beyond reason.'); return; }
      UI=[{t:'cact',target:fo}]; SFX.sel(); renderAll();
    }, can?'small':'small dis2') ]);
@@ -1033,7 +1033,7 @@ function ctlContactTarget(top){
  }
  rws.push([ btnEl('\u2716 BACK',function(){UI=[{t:'main'}];SFX.back();renderAll();},'red') ]);
  rows.apply(null,rws);
- el('hint').textContent='Speak to which demon?';
+ el('hint').textContent='Speak to which aspect?';
 }
 function ctlContactAct(top){
  var c=nextCmdChar();
@@ -1146,8 +1146,8 @@ function doPlayer(c,cmd){
 function pickAliveFoe(){ var a=aliveFoes(); return a.length?a[rnd(a.length)]:null; }
 function hitFoe(fo,dmg,elem){
  var mult=1, tag='';
- if(DEMONS[fo.sp].weak.indexOf(elem)>=0){ mult=2; tag=' WEAK!'; }
- else if(DEMONS[fo.sp].res.indexOf(elem)>=0){ mult=0.5; tag=' (resisted)'; }
+ if(ASPECTS[fo.sp].weak.indexOf(elem)>=0){ mult=2; tag=' WEAK!'; }
+ else if(ASPECTS[fo.sp].res.indexOf(elem)>=0){ mult=0.5; tag=' (resisted)'; }
  var final=Math.max(1,Math.round(dmg*mult));
  fo.hp-=final; fo.flash=1;
  if(mult===2) SFX.weak(); else SFX.hit();
@@ -1157,7 +1157,7 @@ function hitFoe(fo,dmg,elem){
 function doContact(c,act,fo){
  if(fo.gone||fo.berserk){ return true; }
  if(Math.random()<0.2){ log(c.name+' '+CLBL[act].toLowerCase()+'s\u2026 the '+fo.sp+' stares through it. No effect.'); return true; }
- var pers=DEMONS[fo.sp].pers;
+ var pers=ASPECTS[fo.sp].pers;
  var r=REACT[pers][act];
  var emo=r[0], amt=r[1];
  fo.emo[emo]=(fo.emo[emo]||0)+amt;
@@ -1196,7 +1196,7 @@ function doEnemy(fo){
  }
  var t=living[rnd(living.length)];
  var elem=null, pow;
- if(Math.random()<0.4){ elem=DEMONS[fo.sp].elem; }
+ if(Math.random()<0.4){ elem=ASPECTS[fo.sp].elem; }
  var base=fo.atk*(fo.berserk?1.6:1)*(G.moon===4?1.2:1);
  pow=Math.round(base*2)+rnd(5);
  log(fo.sp+' ('+fo.tag+') lunges at '+t.name+'.');
@@ -1270,7 +1270,7 @@ function randomPack(){
  return picks;
 }
 function makeFoe(name,i){
- var d=DEMONS[name];
+ var d=ASPECTS[name];
  return {sp:name,tag:String.fromCharCode(65+i),lv:d.lv,hp:d.hp,maxhp:d.hp,
   atk:d.atk,def:d.def,agi:d.agi,
   emo:{eager:0,happy:0,scared:0,angry:0},
@@ -1301,13 +1301,13 @@ function ctlTitle(){
   [ btnEl('LOAD GAME',loadGame,'blue') ],
   [ btnEl(MUTED?'SOUND: OFF':'SOUND: ON',toggleSound) ]
  );
- el('hint').textContent='Contact demons to win cards \u2014 but not under a full moon.';
+ el('hint').textContent='Contact aspects to win cards \u2014 but not under a full moon.';
 }
 function startNew(){
  G=freshGame(); B=null; MODE='explore'; UI=[]; LOGS=[];
  markExplored(); if(!MUTED) drone(true);
  log('You wake at the mouth of the catacombs. Three masks, one moon.');
- log('Tip: weaken a demon, then CONTACT it \u2014 win its card, fuse masques at the Azure Room \u9580.');
+ log('Tip: weaken an aspect, then CONTACT it \u2014 win its card, fuse masques at the Azure Room \u9580.');
  renderAll();
 }
 function toTitle(){ MODE='title'; UI=[]; B=null; drone(false); LOGS=[]; renderAll(); }
