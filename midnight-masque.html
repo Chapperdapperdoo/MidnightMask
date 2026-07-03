@@ -1200,18 +1200,16 @@ function placeFoes(){
 }
 function livingParty(){ var a=[]; for(var i=0;i<G.party.length;i++) if(G.party[i].hp>0) a.push(G.party[i]); return a; }
 function aliveFoes(){ var a=[]; for(var i=0;i<B.foes.length;i++) if(!B.foes[i].gone) a.push(B.foes[i]); return a; }
-function nextCmdChar(){
- var living=livingParty();
- if(B.ci>=living.length) return null;
- return living[B.ci];
-}
+function nextCmdChar(){ return B?B.current:null; }
 function queueCmd(cmd){
- cmd.actor=nextCmdChar();
- B.cmds.push(cmd);
- B.ci++;
- UI=[];
- if(B.ci>=livingParty().length) resolveRound();
- else renderAll();
+ var actor=B.current;
+ if(!actor) return;
+ cmd.actor=actor;
+ UI=[]; B.running=true; B.current=null; renderAll();
+ var acted=doPlayer(actor,cmd);
+ if(B&&B.fled) return;
+ renderAll();
+ setTimeout(advanceTurn, acted?720:70);
 }
 function ctlBattle(top){
  if(B&&(B.running||B.transStart!=null)){ el('ctl').innerHTML=''; el('hint').textContent='\u2014'; return; }
@@ -1363,38 +1361,36 @@ function ctlContactAct(top){
 }
 
 /* ---- round resolution ---- */
-function resolveRound(){
- B.running=true; UI=[]; renderAll();
+function startRound(){
+ if(!B) return;
  for(var i=0;i<G.party.length;i++) G.party[i].guard=false;
  var actors=[];
- for(var j=0;j<B.cmds.length;j++){
-  var cm=B.cmds[j];
-  if(cm.actor && cm.actor.hp>0) actors.push({who:cm.actor,cmd:cm,spd:stat(cm.actor,'agi')+rnd(6),side:'p'});
- }
+ for(var p=0;p<G.party.length;p++){ if(G.party[p].hp>0) actors.push({who:G.party[p],side:'p'}); }
  var foes=aliveFoes();
- for(var k=0;k<foes.length;k++){
-  actors.push({who:foes[k],cmd:{kind:'enemy'},spd:foes[k].agi+rnd(6),side:'e'});
+ for(var k=0;k<foes.length;k++){ actors.push({who:foes[k],side:'e'}); }
+ for(var a=0;a<actors.length;a++){
+  actors[a].spd = actors[a].side==='p' ? stat(actors[a].who,'agi')+rnd(6) : actors[a].who.agi+rnd(6);
  }
- actors.sort(function(a,b){return b.spd-a.spd;});
- var qi=0;
- function step(){
-  if(checkEnd()){ finishRound(); return; }
-  if(qi>=actors.length){ finishRound(); return; }
-  var a=actors[qi++];
-  var acted=false;
-  if(a.side==='p'){ if(a.who.hp>0){ acted=doPlayer(a.who,a.cmd); } }
-  else { if(!a.who.gone){ acted=doEnemy(a.who); } }
-  if(B&&B.fled){ return; }
-  renderAll();
-  setTimeout(step, acted?720:70);
- }
- step();
+ actors.sort(function(x,y){return y.spd-x.spd;});
+ B.turnQueue=actors; B.qi=0;
+ advanceTurn();
 }
-function finishRound(){
- if(!B){ return; }
- B.cmds=[]; B.ci=0; B.running=false; UI=[{t:'main'}];
+function advanceTurn(){
+ if(!B) return;
  if(checkEnd()) return;
- renderAll();
+ if(B.qi>=B.turnQueue.length){ startRound(); return; }
+ var a=B.turnQueue[B.qi++];
+ if(a.side==='e'){
+  if(a.who.gone){ advanceTurn(); return; }
+  B.running=true; B.current=null; UI=[{t:'main'}]; renderAll();
+  var acted=doEnemy(a.who);
+  if(B&&B.fled) return;
+  renderAll();
+  setTimeout(advanceTurn, acted?720:70);
+  return;
+ }
+ if(a.who.hp<=0){ advanceTurn(); return; }
+ B.running=false; B.current=a.who; UI=[{t:'main'}]; renderAll();
 }
 function doPlayer(c,cmd){
  if(cmd.kind==='guard'){ c.guard=true; log(c.name+' takes a guarded stance.'); return true; }
@@ -1622,23 +1618,23 @@ function makeFoe(name,i){
 function startBattle(){
  drone(false);
  var names=randomPack();
- B={foes:[],cmds:[],ci:0,running:false,boss:false,fled:false,transStart:performance.now()};
+ B={foes:[],running:false,boss:false,fled:false,transStart:performance.now(),turnQueue:[],qi:0,current:null};
  for(var i=0;i<names.length;i++) B.foes.push(makeFoe(names[i],i));
  placeParty(); placeFoes();
  MODE='battle'; UI=[{t:'main'}]; LOGS=[];
  var label = names.length>1 ? names.join(', ') : names[0];
  log('Shapes rise from the dark: '+label+'.');
  renderAll();
- setTimeout(function(){ if(B) renderAll(); }, BATTLE_TRANS_MS+40);
+ setTimeout(function(){ if(B) startRound(); }, BATTLE_TRANS_MS+40);
 }
 function bossIntro(){
  drone(false);
- B={foes:[makeFoe('Moon Sovereign',0)],cmds:[],ci:0,running:false,boss:true,fled:false,transStart:performance.now()};
+ B={foes:[makeFoe('Moon Sovereign',0)],running:false,boss:true,fled:false,transStart:performance.now(),turnQueue:[],qi:0,current:null};
  placeParty(); placeFoes();
  MODE='battle'; UI=[{t:'main'}]; LOGS=[];
  log('The gate breathes. A voice like frost: "LITTLE MASKS. YOU CAME."');
  renderAll();
- setTimeout(function(){ if(B) renderAll(); }, BATTLE_TRANS_MS+40);
+ setTimeout(function(){ if(B) startRound(); }, BATTLE_TRANS_MS+40);
 }
 
 /* ============ TITLE / END ============ */

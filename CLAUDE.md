@@ -90,19 +90,27 @@ rather than adding parallel UI state.
 
 ### Battle flow
 
-Player actions are queued via `queueCmd()` until all living party members have
-chosen (`B.ci` tracks whose turn it is to pick). `resolveRound()` merges queued
-player commands with enemy actions, sorts all actors by speed
-(`agi + rnd(6)`), then steps through them one at a time with `setTimeout` for
-pacing (`doPlayer`/`doEnemy`). Elemental weak/resist multipliers are resolved in
-`hitFoe`/`hitChar` against each `ASPECTS`/`MASQUES` entry's `weak`/`res` arrays.
+Turn order is decided once per round: `startRound()` rolls speed
+(`agi + rnd(6)`) for every living party member and foe and sorts them into
+`B.turnQueue`. `advanceTurn()` walks that queue one actor at a time — an enemy
+acts immediately via `doEnemy()`, but a party member's turn just sets
+`B.current` to them and waits (`ctlBattle` renders their action menu). Picking
+an action calls `queueCmd()`, which resolves it **immediately** via `doPlayer()`
+(not queued for later) and then calls `advanceTurn()` again after a short
+`setTimeout` pacing delay — so an attack, skill, or move lands the instant it's
+chosen rather than waiting for the rest of the party to also pick. `B.running`
+is true whenever no one is currently waiting on player input (enemy turn or
+between-action pacing), which is what `ctlBattle` checks to hide the controls.
+When `B.turnQueue` is exhausted, `startRound()` runs again for a fresh round.
+Elemental weak/resist multipliers are resolved in `hitFoe`/`hitChar` against
+each `ASPECTS`/`MASQUES` entry's `weak`/`res` arrays.
 
 Battles happen on a shared `GRID_W`x`GRID_H` (5x5) grid: party members and foes
 each carry transient `gx`/`gy` cell coordinates (assigned by `placeParty()`/
 `placeFoes()` at battle start, column `GRID_PARTY_COL`/`GRID_FOE_COL` with rows
-from `centeredRows()`). `MOVE` is a queued command like any other action
-(`cmd.kind==='move'`), resolved in `doPlayer`/turn order same as attacks —
-positioning is not free. Basic ATTACK and any `elem:'phys'` skill are melee-only
+from `centeredRows()`). `MOVE` is a command like any other action
+(`cmd.kind==='move'`), resolved in `doPlayer` same as attacks — positioning is
+not free. Basic ATTACK and any `elem:'phys'` skill are melee-only
 (`isMelee()`), requiring `gdist()<=1` (Chebyshev distance) to the target;
 `ctlTarget` greys out foes out of reach. Elemental single-target skills are
 unlimited range. Skills with `area:'col'`/`'row'` in `SKILLS` hit every living
