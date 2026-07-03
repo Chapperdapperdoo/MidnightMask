@@ -52,6 +52,11 @@ button.blue{border-color:#28407a;color:#b9cdf0;background:#0d1226;}
 button.dis{opacity:.35;pointer-events:none;}
 button.dis2{opacity:.45;}
 button.small{min-height:40px;padding:8px 6px;font-size:12.5px;letter-spacing:.4px;text-align:left;padding-left:12px;}
+button.ephys{border-color:#5c5636;color:#d8cfa0;background:#15130a;}
+button.efire{border-color:#7a3520;color:#ffb08a;background:#1a0d0a;}
+button.eice{border-color:#234a66;color:#9fe0ff;background:#0a1620;}
+button.eelec{border-color:#6a5a1a;color:#f0e08a;background:#1a1608;}
+button.ewind{border-color:#1f6a4a;color:#9be8c0;background:#0a1810;}
 .hint{font-size:11px;color:var(--dim);text-align:center;letter-spacing:1px;min-height:14px;padding-bottom:10px;}
 </style>
 </head>
@@ -1114,6 +1119,7 @@ function ctlSkill(top){
    else if(s.type==='heal') label+='  \u00b7 Heal '+(s.targ==='allies'?'(party)':'');
    else if(s.type==='revive') label+='  \u00b7 Revive';
    var afford=c.sp>=s.cost;
+   var cls=(afford?'small':'small dis2')+(s.type==='dmg'?' e'+s.elem:'');
    rws.push([ btnEl(label, function(){
      if(!afford){ log('Not enough SP for '+sn+'.'); return; }
      if(s.type==='dmg'&&s.targ==='all'){ queueCmd({kind:'skill',skill:sn}); }
@@ -1121,7 +1127,7 @@ function ctlSkill(top){
      else if(s.type==='dmg'){ UI=[{t:'target',mode:'skill',skill:sn}]; SFX.sel(); renderAll(); }
      else if(s.type==='heal'){ UI=[{t:'ally',skill:sn}]; SFX.sel(); renderAll(); }
      else if(s.type==='revive'){ UI=[{t:'revive',skill:sn}]; SFX.sel(); renderAll(); }
-   }, afford?'small':'small dis2') ]);
+   }, cls) ]);
   })(sks[i]);
  }
  rws.push([ btnEl('\u2716 BACK',function(){UI=[{t:'main'}];SFX.back();renderAll();},'red') ]);
