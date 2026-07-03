@@ -792,6 +792,7 @@ function refreshCtl(){
  else if(top.t==='mchar') ctlMasqChar(top);
  else if(top.t==='mpick') ctlMasqPick(top);
  else if(top.t==='cards') ctlCards();
+ else if(top.t==='stats') ctlStats();
  else ctlDpad();
 }
 function ctlDpad(){
@@ -810,8 +811,9 @@ function ctlMenu(){
  rows(
   [ btnEl('ITEMS',function(){UI.push({t:'items',ctx:'field'});SFX.sel();renderAll();}),
     btnEl('MASQUES',function(){UI.push({t:'mchar',ctx:'field'});SFX.sel();renderAll();}) ],
-  [ btnEl('CARDS ('+G.cards.length+')',function(){UI.push({t:'cards'});SFX.sel();renderAll();}),
-    btnEl('OBOLS: '+G.coins,function(){},'dis') ],
+  [ btnEl('STATS',function(){UI.push({t:'stats'});SFX.sel();renderAll();}),
+    btnEl('CARDS ('+G.cards.length+')',function(){UI.push({t:'cards'});SFX.sel();renderAll();}) ],
+  [ btnEl('OBOLS: '+G.coins,function(){},'dis') ],
   [ btnEl('SAVE',function(){saveGame();}), btnEl('LOAD',function(){loadGame();}) ],
   [ btnEl(MUTED?'SOUND: OFF':'SOUND: ON',toggleSound),
     btnEl('\u2716 CLOSE',popUI,'red') ]
@@ -922,6 +924,30 @@ function ctlCards(){
  rws.push([ btnEl('\u2716 BACK',popUI,'red') ]);
  rows.apply(null,rws);
  el('hint').textContent='Fuse cards in the Azure Room to forge new masques.';
+}
+function elemList(arr){
+ if(!arr.length) return '—';
+ var out=[]; for(var i=0;i<arr.length;i++) out.push(ELN[arr[i]]);
+ return out.join('/');
+}
+function ctlStats(){
+ var rws=[];
+ for(var i=0;i<G.party.length;i++){
+  (function(c){
+   var m=mq(c);
+   rws.push([ btnEl(m.glyph+' '+c.name+(c.hp<=0?' (fallen)':'')+'  ·  L'+c.lv+'  ·  '+c.masque,
+     function(){},'small dis2') ]);
+   rws.push([ btnEl('HP '+Math.max(0,c.hp)+'/'+maxHp(c)+'   SP '+c.sp+'/'+maxSp(c)+'   XP '+c.xp+'/'+(c.lv*24),
+     function(){},'small dis2') ]);
+   rws.push([ btnEl('STR '+stat(c,'str')+'   MAG '+stat(c,'mag')+'   AGI '+stat(c,'agi')+'   DEF '+charDef(c),
+     function(){},'small dis2') ]);
+   rws.push([ btnEl('Resist '+elemList(m.res)+'   Weak '+elemList(m.weak),
+     function(){},'small dis2') ]);
+  })(G.party[i]);
+ }
+ rws.push([ btnEl('✖ BACK',popUI,'red') ]);
+ rows.apply(null,rws);
+ el('hint').textContent='Stat bonuses from the worn masque are already folded in.';
 }
 
 /* ============ AZURE ROOM ============ */
