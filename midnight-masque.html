@@ -399,15 +399,9 @@ function decorBasementFront(x,y,w,h,a,t){
  CTX.globalAlpha=1;
 }
 function decorPsychFront(x,y,w,h,a,t){
- var cx=x+w/2, cy=y+h/2, maxr=Math.max(w,h)*0.75;
- var rings=Math.max(3,Math.min(7,Math.round(maxr/9)));
- CTX.globalAlpha=a*0.85; CTX.lineWidth=Math.max(1,w*0.03);
- for(var i=0;i<rings;i++){
-  var r=maxr*(1-i/rings);
-  var hue=((t||0)/10 + i*46 + x*0.4) % 360;
-  CTX.strokeStyle='hsl('+hue+',95%,60%)';
-  CTX.beginPath(); CTX.arc(cx,cy,Math.max(1,r),0,Math.PI*2); CTX.stroke();
- }
+ var hue=((t||0)/40 + x*0.5) % 360;
+ CTX.globalAlpha=a*0.55; CTX.fillStyle='hsl('+hue+',85%,45%)';
+ CTX.fillRect(x,y,w,h);
  CTX.globalAlpha=1;
 }
 function decorSide(decor,xn,xf,y1,y2,y3,y4,a,t){
@@ -426,7 +420,7 @@ function decorSide(decor,xn,xf,y1,y2,y3,y4,a,t){
   var yy1=y1+(y4-y1)*0.4, yy2=y2+(y3-y2)*0.4;
   CTX.beginPath(); CTX.moveTo(xn,yy1); CTX.lineTo(xf,yy2); CTX.stroke();
  } else if(decor==='psych'){
-  var hue=((t||0)/8 + xn*0.6) % 360;
+  var hue=((t||0)/40 + xn*0.6) % 360;
   CTX.globalAlpha=a*0.4; CTX.fillStyle='hsl('+hue+',90%,55%)';
   CTX.beginPath(); CTX.moveTo(xn,y1); CTX.lineTo(xf,y2); CTX.lineTo(xf,y3); CTX.lineTo(xn,y4); CTX.closePath(); CTX.fill();
  }
