@@ -1230,8 +1230,10 @@ function placeParty(){
  for(var i=0;i<G.party.length;i++){ G.party[i].gx=GRID_PARTY_COL; G.party[i].gy=rows[i]; }
 }
 function placeFoes(){
- var rows=centeredRows(B.foes.length);
- for(var i=0;i<B.foes.length;i++){ B.foes[i].gx=GRID_FOE_COL; B.foes[i].gy=rows[i]; }
+ var cells=[];
+ for(var gx=GRID_PARTY_COL+1;gx<GRID_W;gx++) for(var gy=0;gy<GRID_H;gy++) cells.push([gx,gy]);
+ for(var i=cells.length-1;i>0;i--){ var j=rnd(i+1); var tmp=cells[i]; cells[i]=cells[j]; cells[j]=tmp; }
+ for(var k=0;k<B.foes.length;k++){ B.foes[k].gx=cells[k][0]; B.foes[k].gy=cells[k][1]; }
 }
 function livingParty(){ var a=[]; for(var i=0;i<G.party.length;i++) if(G.party[i].hp>0) a.push(G.party[i]); return a; }
 function aliveFoes(){ var a=[]; for(var i=0;i<B.foes.length;i++) if(!B.foes[i].gone) a.push(B.foes[i]); return a; }
@@ -1240,6 +1242,15 @@ function queueCmd(cmd){
  var actor=B.current;
  if(!actor) return;
  cmd.actor=actor;
+ if(cmd.kind==='move'){
+  if(B.movedThisTurn){ log(actor.name+' has already moved this turn.'); return; }
+  UI=[];
+  doPlayer(actor,cmd);
+  if(B&&B.fled) return;
+  B.movedThisTurn=true;
+  renderAll();
+  return;
+ }
  UI=[]; B.running=true; B.current=null; renderAll();
  var acted=doPlayer(actor,cmd);
  if(B&&B.fled) return;
@@ -1270,11 +1281,14 @@ function ctlBattle(top){
       UI=[{t:'ctarget'}]; SFX.sel(); renderAll();
     },'blue'),
     btnEl('ITEM',function(){UI=[{t:'items',ctx:'battle'}];SFX.sel();renderAll();}) ],
-  [ btnEl('MOVE',function(){UI=[{t:'movedir'}];SFX.sel();renderAll();}),
+  [ btnEl('MOVE'+(B.movedThisTurn?' (used)':''),function(){
+      if(B.movedThisTurn){ log(c.name+' has already moved this turn.'); return; }
+      UI=[{t:'movedir'}];SFX.sel();renderAll();
+    }, B.movedThisTurn?'dis2':''),
     btnEl('GUARD',function(){ queueCmd({kind:'guard'}); }) ],
   [ btnEl('RUN',function(){ queueCmd({kind:'run'}); },'red') ]
  );
- el('hint').textContent=c.name+' \u00b7 '+c.masque+' '+mq(c).glyph+'  \u2014 choose an action';
+ el('hint').textContent=c.name+' \u00b7 '+c.masque+' '+mq(c).glyph+(B.movedThisTurn?'  \u2014 you have moved; choose an action':'  \u2014 choose an action');
 }
 function dpadBtn(c,dx,dy,lbl){
  var nx=c.gx+dx, ny=c.gy+dy;
@@ -1425,7 +1439,7 @@ function advanceTurn(){
   return;
  }
  if(a.who.hp<=0){ advanceTurn(); return; }
- B.running=false; B.current=a.who; UI=[{t:'main'}]; renderAll();
+ B.running=false; B.current=a.who; B.movedThisTurn=false; UI=[{t:'main'}]; renderAll();
 }
 function doPlayer(c,cmd){
  if(cmd.kind==='guard'){ c.guard=true; log(c.name+' takes a guarded stance.'); return true; }
@@ -1653,7 +1667,7 @@ function makeFoe(name,i){
 function startBattle(){
  drone(false);
  var names=randomPack();
- B={foes:[],running:false,boss:false,fled:false,transStart:performance.now(),turnQueue:[],qi:0,current:null};
+ B={foes:[],running:false,boss:false,fled:false,transStart:performance.now(),turnQueue:[],qi:0,current:null,movedThisTurn:false};
  for(var i=0;i<names.length;i++) B.foes.push(makeFoe(names[i],i));
  placeParty(); placeFoes();
  MODE='battle'; UI=[{t:'main'}]; LOGS=[];
@@ -1664,7 +1678,7 @@ function startBattle(){
 }
 function bossIntro(){
  drone(false);
- B={foes:[makeFoe('Moon Sovereign',0)],running:false,boss:true,fled:false,transStart:performance.now(),turnQueue:[],qi:0,current:null};
+ B={foes:[makeFoe('Moon Sovereign',0)],running:false,boss:true,fled:false,transStart:performance.now(),turnQueue:[],qi:0,current:null,movedThisTurn:false};
  placeParty(); placeFoes();
  MODE='battle'; UI=[{t:'main'}]; LOGS=[];
  log('The gate breathes. A voice like frost: "LITTLE MASKS. YOU CAME."');

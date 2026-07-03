@@ -136,11 +136,17 @@ Elemental weak/resist multipliers are resolved in `hitFoe`/`hitChar` against
 each `ASPECTS`/`MASQUES` entry's `weak`/`res` arrays.
 
 Battles happen on a shared `GRID_W`x`GRID_H` (5x5) grid: party members and foes
-each carry transient `gx`/`gy` cell coordinates (assigned by `placeParty()`/
-`placeFoes()` at battle start, column `GRID_PARTY_COL`/`GRID_FOE_COL` with rows
-from `centeredRows()`). `MOVE` is a command like any other action
-(`cmd.kind==='move'`), resolved in `doPlayer` same as attacks — positioning is
-not free. Basic ATTACK and any `elem:'phys'` skill are melee-only
+each carry transient `gx`/`gy` cell coordinates. `placeParty()` puts the party
+in `GRID_PARTY_COL` (rows from `centeredRows()`); `placeFoes()` scatters foes
+across random distinct cells in the remaining columns, so foe starting
+distance/row varies battle to battle instead of always facing the party head-on.
+`MOVE` is a command like any other action (`cmd.kind==='move'`), resolved in
+`doPlayer` same as attacks — positioning is not free — but unlike other
+commands it doesn't end the turn: `queueCmd` special-cases `kind==='move'` to
+apply it and redisplay the same actor's menu with `B.movedThisTurn` set, so a
+character can reposition once and still attack/cast/etc. in that same turn;
+`B.movedThisTurn` resets in `advanceTurn` when a new turn begins. Basic ATTACK
+and any `elem:'phys'` skill are melee-only
 (`isMelee()`), requiring `gdist()<=1` (Chebyshev distance) to the target;
 `ctlTarget` greys out foes out of reach. Elemental single-target skills are
 unlimited range. Skills with `area:'col'`/`'row'` in `SKILLS` hit every living
