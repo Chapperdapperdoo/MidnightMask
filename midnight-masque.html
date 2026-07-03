@@ -137,56 +137,98 @@ var ITEMS={
 var MOONS=['New Moon','Waxing Crescent','First Quarter','Waxing Gibbous','FULL MOON','Waning Gibbous','Last Quarter','Waning Crescent'];
 var STEPS_PER_PHASE=26;
 
-var MAPS=[
-[
-"############",
-"#S.....#..V#",
-"#.###.##.#.#",
-"#.#...#..#.#",
-"#.#.#.##.#.#",
-"#...#...T#.#",
-"##.##.#..#.#",
-"#T.#..#.##.#",
-"#.##.##....#",
-"#.#....#.#.#",
-"#....#.#..>#",
-"############"
-],
-[
-"############",
-"#S...#....H#",
-"##.#.#.##.##",
-"#..#...#..T#",
-"#.##.###.###",
-"#.#...#..#V#",
-"#.#.#.##.#.#",
-"#...#..#...#",
-"###.##.#.#.#",
-"#T...#...#.#",
-"#.##...#..>#",
-"############"
-],
-[
-"############",
-"#S....#....#",
-"#.##.##.##.#",
-"#..#.#..#..#",
-"##.#.#.##.##",
-"#..#...#..H#",
-"#.##.#.#.###",
-"#.T#.#.#...#",
-"#.####.###.#",
-"#....#..#T.#",
-"####.##...B#",
-"############"
-]
-];
 var FLOOR_NAMES=['Catacomb I','Catacomb II','The Lunar Gate'];
-var CHEST_LOOT=[
- [['coins',60],['item','Medicine',2]],
- [['card','Goblin'],['item','Lunar Dew',1]],
- [['item','Revive Charm',1],['coins',150]]
+var MAZE_W=13, MAZE_H=13;
+function bfsDist(g,sx,sy){
+ var dist={}; dist[sy+','+sx]=0;
+ var queue=[[sx,sy]], qi=0;
+ while(qi<queue.length){
+  var cur=queue[qi++], cx=cur[0], cy=cur[1], cd=dist[cy+','+cx];
+  var nbrs=[[cx+1,cy],[cx-1,cy],[cx,cy+1],[cx,cy-1]];
+  for(var n=0;n<4;n++){
+   var nx=nbrs[n][0], ny=nbrs[n][1];
+   if(g[ny] && g[ny][nx]==='.' && dist[ny+','+nx]===undefined){
+    dist[ny+','+nx]=cd+1; queue.push([nx,ny]);
+   }
+  }
+ }
+ return dist;
+}
+function genFloorMap(isLast){
+ var w=MAZE_W, h=MAZE_H, g=[];
+ for(var y=0;y<h;y++){ var row=[]; for(var x=0;x<w;x++) row.push('#'); g.push(row); }
+ (function carve(cx,cy){
+  g[cy][cx]='.';
+  var dirs=[[0,-2],[0,2],[-2,0],[2,0]];
+  for(var i=dirs.length-1;i>0;i--){ var j=rnd(i+1); var tmp=dirs[i]; dirs[i]=dirs[j]; dirs[j]=tmp; }
+  for(var d=0;d<dirs.length;d++){
+   var nx=cx+dirs[d][0], ny=cy+dirs[d][1];
+   if(nx>0&&nx<w-1&&ny>0&&ny<h-1&&g[ny][nx]==='#'){
+    g[cy+dirs[d][1]/2][cx+dirs[d][0]/2]='.';
+    carve(nx,ny);
+   }
+  }
+ })(1,1);
+ for(var by=1;by<h-1;by++){
+  for(var bx=1;bx<w-1;bx++){
+   if(g[by][bx]!=='#' || Math.random()>=0.12) continue;
+   if(bx%2===0 && by%2===1 && g[by][bx-1]==='.' && g[by][bx+1]==='.') g[by][bx]='.';
+   else if(by%2===0 && bx%2===1 && g[by-1][bx]==='.' && g[by+1][bx]==='.') g[by][bx]='.';
+  }
+ }
+ var dist=bfsDist(g,1,1);
+ var allCells=[], deadSet={};
+ for(var yy=1;yy<h-1;yy++) for(var xx=1;xx<w-1;xx++){
+  if(g[yy][xx]==='.' && !(xx===1&&yy===1)){
+   allCells.push([xx,yy]);
+   var deg=0;
+   if(g[yy-1][xx]==='.') deg++;
+   if(g[yy+1][xx]==='.') deg++;
+   if(g[yy][xx-1]==='.') deg++;
+   if(g[yy][xx+1]==='.') deg++;
+   if(deg<=1) deadSet[xx+','+yy]=true;
+  }
+ }
+ allCells.sort(function(a,b){ return dist[b[1]+','+b[0]]-dist[a[1]+','+a[0]]; });
+ g[1][1]='S';
+ var farthest=allCells.shift();
+ if(farthest) g[farthest[1]][farthest[0]]=isLast?'B':'>';
+ var deadPool=[], otherPool=[];
+ for(var ac=0;ac<allCells.length;ac++){
+  (deadSet[allCells[ac][0]+','+allCells[ac][1]] ? deadPool : otherPool).push(allCells[ac]);
+ }
+ function shuffle(arr){ for(var i=arr.length-1;i>0;i--){ var j=rnd(i+1); var tmp=arr[i]; arr[i]=arr[j]; arr[j]=tmp; } return arr; }
+ var rest=shuffle(deadPool).concat(shuffle(otherPool));
+ if(rest.length){ var v=rest.shift(); g[v[1]][v[0]]='V'; }
+ if(rest.length){ var hh=rest.shift(); g[hh[1]][hh[0]]='H'; }
+ var chestCount=2+rnd(2);
+ for(var c=0;c<chestCount && rest.length;c++){ var t=rest.shift(); g[t[1]][t[0]]='T'; }
+ var out=[];
+ for(var r=0;r<h;r++) out.push(g[r].join(''));
+ return out;
+}
+function genDungeon(){
+ var floors=[];
+ for(var i=0;i<FLOOR_NAMES.length;i++) floors.push(genFloorMap(i===FLOOR_NAMES.length-1));
+ return floors;
+}
+var LOOT_TABLE=[
+ {kind:'coins',w:3},
+ {kind:'item',name:'Medicine',w:3},
+ {kind:'item',name:'Lunar Dew',w:2},
+ {kind:'item',name:'Revive Charm',w:1},
+ {kind:'card',w:2}
 ];
+function rollLoot(){
+ var total=0; for(var i=0;i<LOOT_TABLE.length;i++) total+=LOOT_TABLE[i].w;
+ var r=Math.random()*total, acc=0, pick=LOOT_TABLE[0];
+ for(var j=0;j<LOOT_TABLE.length;j++){ acc+=LOOT_TABLE[j].w; if(r<acc){ pick=LOOT_TABLE[j]; break; } }
+ var mult=1+G.floor*0.6;
+ if(pick.kind==='coins') return {kind:'coins',amount:Math.round((40+rnd(60))*mult)};
+ if(pick.kind==='item') return {kind:'item',name:pick.name,qty:pick.name==='Revive Charm'?1:(1+rnd(2))};
+ var pool=POOLS[G.floor];
+ return {kind:'card',name:pool[rnd(pool.length)]};
+}
 var THEMES=[
  { // Catacomb I -- an abandoned school corridor
   bgTop:'#141a26',bgMid:'#0a0d16',bgBot:'#12161f',
@@ -228,7 +270,8 @@ function freshGame(){
   inv:{'Medicine':2,'Lunar Dew':1,'Revive Charm':0},
   coins:40, cards:[], owned:['Aeneas','Ajax','Apsaras'],
   floor:0,x:1,y:1,dir:1, steps:0, moonSteps:0, moon:0,
-  opened:{}, bossDead:false, explored:{}, fused:0, cardsWon:0
+  opened:{}, bossDead:false, explored:{}, fused:0, cardsWon:0,
+  dungeon:genDungeon()
  };
 }
 function mq(c){return MASQUES[c.masque];}
@@ -314,7 +357,7 @@ var SCL=[1,0.60,0.385,0.25,0.165];
 function fwd(d){return [[0,-1],[1,0],[0,1],[-1,0]][d];}
 function rightv(d){return fwd((d+1)%4);}
 function mapAt(f,x,y){
- var m=MAPS[f];
+ var m=G.dungeon[f];
  if(y<0||y>=m.length||x<0||x>=m[0].length) return '#';
  return m[y][x];
 }
@@ -500,7 +543,7 @@ function markExplored(){
  if(s.indexOf(key)<0) s.push(key);
 }
 function drawMinimap(){
- var m=MAPS[G.floor], cs=7, mw=m[0].length*cs, mh=m.length*cs;
+ var m=G.dungeon[G.floor], cs=7, mw=m[0].length*cs, mh=m.length*cs;
  var ox=W-mw-8, oy=8;
  CTX.globalAlpha=0.85;
  CTX.fillStyle='#05060d'; CTX.fillRect(ox-3,oy-3,mw+6,mh+6);
@@ -736,7 +779,7 @@ function drawGameover(t){
  CTX.fillText('THE MASQUE FALLS',W/2,150);
  CTX.fillStyle='#7a8199'; CTX.font='13px Georgia';
  CTX.fillText('The catacombs keep what they catch.',W/2,186);
- CTX.fillText('(Load your last save from the title.)',W/2,208);
+ CTX.fillText('There is no waking the fallen. A new descent awaits.',W/2,208);
 }
 function drawVictory(t){
  CTX.fillStyle='#04050b'; CTX.fillRect(0,0,W,H);
@@ -849,13 +892,13 @@ function tileAction(){
  return null;
 }
 function descend(){
- if(G.floor>=MAPS.length-1){ log('The stairs are sealed below. Nowhere left to descend.'); return; }
+ if(G.floor>=G.dungeon.length-1){ log('The stairs are sealed below. Nowhere left to descend.'); return; }
  G.floor++; placeAtStart();
  log('You descend to '+FLOOR_NAMES[G.floor]+'.');
  markExplored(); renderAll();
 }
 function placeAtStart(){
- var m=MAPS[G.floor];
+ var m=G.dungeon[G.floor];
  for(var y=0;y<m.length;y++) for(var x=0;x<m[0].length;x++){
   if(m[y][x]==='S'){ G.x=x; G.y=y; G.dir=isWall(x+1,y)?2:1; return; }
  }
@@ -869,22 +912,14 @@ function useSpring(){
  SFX.heal(); log('The living drink deep. HP and SP restored. (\u221220 obols)');
  renderAll();
 }
-function chestIndex(){
- var m=MAPS[G.floor], n=0;
- for(var y=0;y<m.length;y++) for(var x=0;x<m[0].length;x++){
-  if(m[y][x]==='T'){ if(x===G.x&&y===G.y) return n; n++; }
- }
- return -1;
-}
 function openChest(){
  var key=G.floor+':'+G.x+','+G.y;
  if(G.opened[key]){ log('Already emptied.'); return; }
- var idx=chestIndex();
- var loot=CHEST_LOOT[G.floor][idx];
  G.opened[key]=true;
- if(loot[0]==='coins'){ G.coins+=loot[1]; log('The strongbox holds '+loot[1]+' obols.'); }
- else if(loot[0]==='item'){ G.inv[loot[1]]=(G.inv[loot[1]]||0)+loot[2]; log('You find '+loot[2]+'\u00d7 '+loot[1]+'.'); }
- else if(loot[0]==='card'){ G.cards.push(loot[1]); G.cardsWon++; log('A Spirit Card lies inside: '+loot[1]+'.'); SFX.card(); }
+ var loot=rollLoot();
+ if(loot.kind==='coins'){ G.coins+=loot.amount; log('The strongbox holds '+loot.amount+' obols.'); }
+ else if(loot.kind==='item'){ G.inv[loot.name]=(G.inv[loot.name]||0)+loot.qty; log('You find '+loot.qty+'\u00d7 '+loot.name+'.'); }
+ else if(loot.kind==='card'){ G.cards.push(loot.name); G.cardsWon++; log('A Spirit Card lies inside: '+loot.name+'.'); SFX.card(); }
  renderAll();
 }
 
@@ -1648,14 +1683,22 @@ function ctlTitle(){
 }
 function startNew(){
  G=freshGame(); B=null; MODE='explore'; UI=[]; LOGS=[];
+ placeAtStart();
  markExplored(); if(!MUTED) drone(true);
  log('You wake at the mouth of the catacombs. Three masks, one moon.');
  log('Tip: weaken an aspect, then CONTACT it \u2014 win its card, fuse masques at the Azure Room \u9580.');
+ log('The catacombs reshape themselves each time you enter \u2014 and there is no waking the fallen.');
  renderAll();
 }
 function toTitle(){ MODE='title'; UI=[]; B=null; drone(false); LOGS=[]; renderAll(); }
-function gameOver(){ B=null; MODE='gameover'; UI=[]; drone(false); SFX.die(); renderAll(); }
-function victory(){ MODE='victory'; UI=[]; drone(false); SFX.card(); renderAll(); }
+function wipeSave(){
+ try{
+  if(!window.storage) return;
+  window.storage.set('midnight-masque-save','').catch(function(){});
+ }catch(e){}
+}
+function gameOver(){ B=null; MODE='gameover'; UI=[]; drone(false); SFX.die(); wipeSave(); renderAll(); }
+function victory(){ MODE='victory'; UI=[]; drone(false); SFX.card(); wipeSave(); renderAll(); }
 
 /* ============ KEYBOARD ============ */
 document.addEventListener('keydown',function(e){

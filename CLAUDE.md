@@ -6,9 +6,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 MidnightMask is a single-file, dependency-free HTML5 dungeon-crawler game called
 **MIDNIGHT MASQUE** — a Shin Megami Tensei / Persona-style first-person catacomb
-crawl with turn-based battles, aspect "contact"/persuasion, card fusion, and a
-day/night (moon phase) cycle. The entire game — markup, CSS, and JS — lives in
-one file: `midnight-masque.html`. There is no other source code in this repo.
+crawl with turn-based battles, aspect "contact"/persuasion, card fusion, a
+day/night (moon phase) cycle, and roguelike bones: procedurally generated
+floors, randomized loot, and permadeath (see "Exploration / dungeon
+generation" below). The entire game — markup, CSS, and JS — lives in one file:
+`midnight-masque.html`. There is no other source code in this repo.
 
 ## Repo layout
 
@@ -51,7 +53,10 @@ game by editing these, not by writing new logic:
 - `ASPECTS` — enemy/recruitable aspect → {glyph, lv, hp, atk, def, agi, weak, res, pers, rank, elem}
 - `POOLS` — per-floor random encounter aspect pools
 - `REACT` — aspect personality → CONTACT action → emotion reaction table (persuasion mechanic)
-- `ITEMS`, `MOONS`, `MAPS` (ASCII dungeon layouts per floor), `FLOOR_NAMES`, `CHEST_LOOT`
+- `ITEMS`, `MOONS`, `FLOOR_NAMES`, `LOOT_TABLE` (weighted chest-loot rolls, see below)
+
+There is no static `MAPS` table anymore — floor layouts are generated fresh
+per run (see "Exploration / dungeon generation").
 
 ### Global state, not modules
 
@@ -79,6 +84,31 @@ paint floor-specific detail (school windows, basement grime, psychedelic rings)
 clipped to each wall segment. `drawFront`/`drawSide` take the animation
 timestamp `t` so decor can animate (e.g. the psychedelic hue rotation);
 `draw3D(t)` is what threads `t` down from `drawScene`.
+
+### Exploration / dungeon generation
+
+Floor layouts are procedurally generated, not fixed: `genFloorMap()` carves a
+perfect maze on a `MAZE_W`x`MAZE_H` grid with a recursive backtracker, then
+knocks down a few extra walls (a "braiding" pass) so the layout isn't pure
+dead-ends. `bfsDist()` finds distances from the entrance; the farthest cell
+becomes the exit (`>`, or `B` on the last floor for the boss gate), and the
+remaining cells (dead ends preferred, but falling back to any open cell so
+placement never runs out of room) get the Azure Room door (`V`), the spring
+(`H`), and 2-3 chests (`T`). `genDungeon()` builds all `FLOOR_NAMES.length`
+floors this way once per new game and stores them as `G.dungeon` — this is
+part of the save object precisely so a reloaded run keeps its layout. Nothing
+reads the floor-map data table anymore; `mapAt()`/`placeAtStart()`/
+`drawMinimap()` all index into `G.dungeon[G.floor]` instead of a static `MAPS`.
+
+Chest loot is rolled fresh at open time from `LOOT_TABLE` (`rollLoot()`
+weighted-picks coins/an item/a random aspect card from that floor's `POOLS`,
+scaling value with `G.floor`) rather than being pre-assigned per chest —
+opening the "same" chest position in two different runs gives different loot.
+
+Death and victory are both permanent: `gameOver()`/`victory()` call
+`wipeSave()`, which clears the `window.storage` save slot, so there is no
+reloading past a fallen party — a new run starts (and generates a new
+`G.dungeon`) from the title screen.
 
 ### UI stack pattern
 
