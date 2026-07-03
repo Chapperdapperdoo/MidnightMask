@@ -209,7 +209,8 @@ var THEMES=[
 ];
 
 /* ============ STATE ============ */
-var MODE='title', UI=[], G=null, B=null, LOGS=[], MUTED=false, DRONE=null;
+var MODE='intro', UI=[], G=null, B=null, LOGS=[], MUTED=false, DRONE=null;
+var INTRO_START=null;
 
 function newChar(name,hp,sp,str,mag,agi,masque){
  return {name:name,lv:1,xp:0,hp:hp,maxhp:hp,sp:sp,maxsp:sp,str:str,mag:mag,agi:agi,masque:masque,guard:false};
@@ -545,6 +546,39 @@ function drawMoonHud(){
  CTX.fillText(FLOOR_NAMES[G.floor]+' \u00b7 '+G.coins+' ob', 46, 33);
  CTX.restore();
 }
+var INTRO_TEXT='In the crucible of this modern age, a new kind of man was forged. These men live in the deadliest of days.';
+var INTRO_FADE_IN=1300, INTRO_HOLD=3400, INTRO_FADE_OUT=900;
+var INTRO_TOTAL=INTRO_FADE_IN+INTRO_HOLD+INTRO_FADE_OUT;
+function wrapLines(ctx,text,maxWidth){
+ var words=text.split(' '), lines=[], cur='';
+ for(var i=0;i<words.length;i++){
+  var test=cur?cur+' '+words[i]:words[i];
+  if(ctx.measureText(test).width>maxWidth && cur){ lines.push(cur); cur=words[i]; }
+  else cur=test;
+ }
+ if(cur) lines.push(cur);
+ return lines;
+}
+function drawIntro(){
+ if(INTRO_START==null) INTRO_START=performance.now();
+ var elapsed=performance.now()-INTRO_START;
+ if(elapsed>=INTRO_TOTAL){ MODE='title'; renderAll(); return; }
+ var alpha;
+ if(elapsed<INTRO_FADE_IN) alpha=elapsed/INTRO_FADE_IN;
+ else if(elapsed<INTRO_FADE_IN+INTRO_HOLD) alpha=1;
+ else alpha=1-(elapsed-INTRO_FADE_IN-INTRO_HOLD)/INTRO_FADE_OUT;
+ alpha=Math.max(0,Math.min(1,alpha));
+ CTX.fillStyle='#f4f1ea'; CTX.fillRect(0,0,W,H);
+ CTX.save();
+ CTX.globalAlpha=alpha;
+ CTX.font='20px Georgia';
+ CTX.fillStyle='#a8182a';
+ CTX.textAlign='center'; CTX.textBaseline='middle';
+ var lines=wrapLines(CTX,INTRO_TEXT,380);
+ var lh=30, startY=H/2-(lines.length-1)*lh/2;
+ for(var i=0;i<lines.length;i++) CTX.fillText(lines[i],W/2,startY+i*lh);
+ CTX.restore();
+}
 function drawTitle(t){
  CTX.fillStyle='#04040a'; CTX.fillRect(0,0,W,H);
  var pulse=0.5+0.5*Math.sin(t/900);
@@ -671,7 +705,8 @@ function drawVictory(t){
  CTX.fillText('"Until the next mask, child." \u2014 the Maestro',W/2,288);
 }
 function drawScene(t){
- if(MODE==='title') drawTitle(t);
+ if(MODE==='intro') drawIntro();
+ else if(MODE==='title') drawTitle(t);
  else if(MODE==='explore'&&G){ draw3D(t); drawSpecials(); drawMinimap(); drawMoonHud(); }
  else if(MODE==='battle') drawBattle(t);
  else if(MODE==='velvet'&&G) drawVelvet(t);
@@ -807,6 +842,7 @@ function openChest(){
 
 /* ============ CONTROL DISPATCH ============ */
 function refreshCtl(){
+ if(MODE==='intro'){ rows([btnEl('SKIP ▶',function(){MODE='title';SFX.sel();renderAll();})]); el('hint').textContent=''; return; }
  if(MODE==='title'){ ctlTitle(); return; }
  if(MODE==='gameover'){ rows([btnEl('RETURN TO TITLE',toTitle,'red')]); el('hint').textContent=''; return; }
  if(MODE==='victory'){ rows([btnEl('RETURN TO TITLE',toTitle,'blue')]); el('hint').textContent=''; return; }
@@ -1493,6 +1529,7 @@ function victory(){ MODE='victory'; UI=[]; drone(false); SFX.card(); renderAll()
 /* ============ KEYBOARD ============ */
 document.addEventListener('keydown',function(e){
  var k=e.key.toLowerCase();
+ if(MODE==='intro'){ MODE='title'; SFX.sel(); renderAll(); e.preventDefault(); return; }
  if(MODE==='explore' && UI.length===0){
   if(k==='arrowup'||k==='w'){ move(1); e.preventDefault(); }
   else if(k==='arrowdown'||k==='s'){ move(-1); e.preventDefault(); }
