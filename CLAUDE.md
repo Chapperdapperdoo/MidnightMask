@@ -55,8 +55,8 @@ game by editing these, not by writing new logic:
 
 ### Global state, not modules
 
-Four globals hold all mutable state: `MODE` (a string state machine: `'title'`,
-`'explore'`, `'battle'`, `'velvet'`, `'gameover'`, `'victory'`), `UI` (a stack of
+Four globals hold all mutable state: `MODE` (a string state machine: `'intro'`,
+`'title'`, `'explore'`, `'battle'`, `'velvet'`, `'gameover'`, `'victory'`), `UI` (a stack of
 menu-context objects, e.g. `{t:'items',ctx:'battle'}`), `G` (the save-game
 object: party, inventory, position, floor, moon phase, etc. — this whole object
 is JSON-serialized for save/load), and `B` (transient battle state, `null`
@@ -96,6 +96,22 @@ player commands with enemy actions, sorts all actors by speed
 (`agi + rnd(6)`), then steps through them one at a time with `setTimeout` for
 pacing (`doPlayer`/`doEnemy`). Elemental weak/resist multipliers are resolved in
 `hitFoe`/`hitChar` against each `ASPECTS`/`MASQUES` entry's `weak`/`res` arrays.
+
+Battles happen on a shared `GRID_W`x`GRID_H` (5x5) grid: party members and foes
+each carry transient `gx`/`gy` cell coordinates (assigned by `placeParty()`/
+`placeFoes()` at battle start, column `GRID_PARTY_COL`/`GRID_FOE_COL` with rows
+from `centeredRows()`). `MOVE` is a queued command like any other action
+(`cmd.kind==='move'`), resolved in `doPlayer`/turn order same as attacks —
+positioning is not free. Basic ATTACK and any `elem:'phys'` skill are melee-only
+(`isMelee()`), requiring `gdist()<=1` (Chebyshev distance) to the target;
+`ctlTarget` greys out foes out of reach. Elemental single-target skills are
+unlimited range. Skills with `area:'col'`/`'row'` in `SKILLS` hit every living
+foe sharing the chosen target's column/row instead of just that one foe —
+that's how the old "hits everyone" skills (Flame Lash, Torrent, Stormcall) work
+now that positioning exists; picking a target just aims which line gets swept.
+Enemy AI (`doEnemy`) picks melee (60%) or ranged (40%) each turn; if melee and
+not adjacent to its target, it calls `stepToward()` to close in one cell
+instead of attacking that turn, rather than attacking regardless of position.
 
 CONTACT (persuasion) is a distinct SMT-style mechanic: `doContact()` looks up
 the aspect's personality (`pers`) and the chosen verb in `REACT` to raise an
