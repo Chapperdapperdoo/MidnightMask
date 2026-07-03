@@ -72,6 +72,14 @@ raycast-style renderer built from `SCL` (per-depth scale factors) and
 `cellOff()`/`fwd()`/`rightv()` (direction-relative cell lookups) — there's no
 actual raycasting, just nested-rectangle perspective tricks per depth layer.
 
+Wall look is per-floor: `THEMES[G.floor]` (a data table, alongside `FLOOR_NAMES`)
+supplies background-gradient and wall fill/stroke colors, plus a `decor` tag
+(`'school'`, `'basement'`, `'psych'`) consumed by `decorFront()`/`decorSide()` to
+paint floor-specific detail (school windows, basement grime, psychedelic rings)
+clipped to each wall segment. `drawFront`/`drawSide` take the animation
+timestamp `t` so decor can animate (e.g. the psychedelic hue rotation);
+`draw3D(t)` is what threads `t` down from `drawScene`.
+
 ### UI stack pattern
 
 `refreshCtl()` looks at `UI[UI.length-1]` (or `MODE` for full-screen states) and
