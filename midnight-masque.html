@@ -1621,31 +1621,47 @@ function stepToward(fo,target){
  if(sx!==0 && !occupantAt(fo.gx+sx,fo.gy,fo)){ fo.gx+=sx; fo.facing=dirFromDelta(sx,0); return; }
  if(sy!==0 && !occupantAt(fo.gx,fo.gy+sy,fo)){ fo.gy+=sy; fo.facing=dirFromDelta(0,sy); return; }
 }
+function preyTarget(living){
+ var best=living[0];
+ for(var i=1;i<living.length;i++){ if(living[i].hp<best.hp) best=living[i]; }
+ return best;
+}
 function doEnemy(fo){
  var living=livingParty();
  if(living.length===0) return true;
- if(fo.boss && Math.random()<0.45){
+ if(!fo.berserk && fo.hp/fo.maxhp<0.3){
+  fo.berserk=true;
+  log(fo.sp+' ('+fo.tag+') snarls, cornered and desperate!');
+ }
+ if(fo.boss && Math.random()<0.55){
   log('Moon Sovereign gathers the dark \u2014 LUNAR RAY sweeps the party!');
   for(var i=0;i<living.length;i++) hitChar(fo, living[i], 10+fo.lv, null, true);
   return true;
  }
- var melee=Math.random()>=0.4;
+ var melee=Math.random()>=0.25;
  var elem=melee?'phys':ASPECTS[fo.sp].elem;
+ var prey=preyTarget(living);
  var t;
  if(melee){
-  var nearest=living[0], nd=gdist(fo,living[0]);
-  for(var i2=1;i2<living.length;i2++){ var d=gdist(fo,living[i2]); if(d<nd){ nd=d; nearest=living[i2]; } }
-  if(nd>1){
-   var steps=moveRange(fo);
-   for(var s=0;s<steps && gdist(fo,nearest)>1;s++){ stepToward(fo,nearest); }
-   if(gdist(fo,nearest)>1){
-    log(fo.sp+' ('+fo.tag+') closes in.');
-    return true;
+  if(gdist(fo,prey)<=1){
+   t=prey;
+  } else {
+   var adjacent=null;
+   for(var i2=0;i2<living.length;i2++){ if(gdist(fo,living[i2])<=1){ adjacent=living[i2]; break; } }
+   if(adjacent){
+    t=adjacent;
+   } else {
+    var steps=moveRange(fo);
+    for(var s=0;s<steps && gdist(fo,prey)>1;s++){ stepToward(fo,prey); }
+    if(gdist(fo,prey)>1){
+     log(fo.sp+' ('+fo.tag+') closes in.');
+     return true;
+    }
+    t=prey;
    }
   }
-  t=nearest;
  } else {
-  t=living[rnd(living.length)];
+  t=prey;
  }
  var base=fo.atk*(fo.berserk?1.6:1)*(G.moon===4?1.2:1);
  var pow=Math.round(base*2)+rnd(5);
