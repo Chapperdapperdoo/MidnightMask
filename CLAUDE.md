@@ -178,9 +178,20 @@ unlimited range. Skills with `area:'col'`/`'row'` in `SKILLS` hit every living
 foe sharing the chosen target's column/row instead of just that one foe —
 that's how the old "hits everyone" skills (Flame Lash, Torrent, Stormcall) work
 now that positioning exists; picking a target just aims which line gets swept.
-Enemy AI (`doEnemy`) picks melee (60%) or ranged (40%) each turn; if melee and
-not adjacent to its target, it calls `stepToward()` to close in one cell
-instead of attacking that turn, rather than attacking regardless of position.
+Enemy AI (`doEnemy`) is aggressive: every turn it picks `preyTarget()` (the
+living party member with the lowest current HP, not necessarily the nearest)
+and goes after them, focus-firing a weakened character down rather than
+spreading damage randomly. It rolls melee (75%) or ranged (25%); if melee and
+not already adjacent to its prey, it takes an opportunistic attack against
+whichever party member it IS adjacent to instead of disengaging, and
+otherwise spends its move (`stepToward()`, up to `moveRange(fo)` cells) closing
+the gap to its prey, attacking immediately if that closes it to melee range
+in the same turn. If a foe drops under 30% HP and hasn't already, it goes
+berserk automatically ("snarls, cornered and desperate!") for the usual 1.6x
+attack/immune-to-CONTACT effects — a last-stand aggression spike, independent
+of the CONTACT-anger berserk trigger. The boss additionally has a 55% chance
+each turn to skip its normal attack for LUNAR RAY, hitting the whole party
+at once.
 
 CONTACT (persuasion) is a distinct SMT-style mechanic: `doContact()` looks up
 the aspect's personality (`pers`) and the chosen verb in `REACT` to raise an
