@@ -35,6 +35,7 @@ html,body{margin:0;padding:0;background:var(--void);color:var(--ink);
 .sbar.mag i{background:linear-gradient(90deg,#3d2266,#9a6ad8);}
 .sbar.agi i{background:linear-gradient(90deg,#1f6a4a,#57d0a0);}
 .sbar.def i{background:linear-gradient(90deg,#274a74,var(--spc));}
+.sbar.dex i{background:linear-gradient(90deg,#6a5218,var(--gold));}
 #log{background:var(--panel);border:1px solid var(--line);border-radius:3px;
   min-height:70px;padding:6px 10px;font-size:13px;line-height:1.45;}
 #log .l0{color:var(--ink);}
@@ -114,14 +115,14 @@ var MASQUES={
 };
 
 var ASPECTS={
- 'Slime':{glyph:'\u6ce5',lv:2,hp:30,atk:6,def:3,agi:3,weak:['fire'],res:['phys'],pers:'foolish',rank:1,elem:'phys'},
- 'Pixie':{glyph:'\u5996',lv:2,hp:20,atk:7,def:2,agi:8,weak:['wind'],res:['elec'],pers:'timid',rank:1,elem:'elec'},
- 'Goblin':{glyph:'\u9b3c',lv:3,hp:34,atk:8,def:4,agi:5,weak:['fire'],res:[],pers:'irritable',rank:2,elem:'phys'},
- 'Kelpie':{glyph:'\u99ac',lv:5,hp:44,atk:10,def:5,agi:7,weak:['elec'],res:['ice'],pers:'wise',rank:3,elem:'ice'},
- 'Nekomata':{glyph:'\u732b',lv:6,hp:40,atk:11,def:4,agi:10,weak:['ice'],res:['phys'],pers:'foolish',rank:3,elem:'phys'},
- 'Wight':{glyph:'\u6b7b',lv:8,hp:58,atk:13,def:6,agi:6,weak:['fire'],res:['ice','phys'],pers:'wise',rank:4,elem:'ice'},
- 'Fenrir':{glyph:'\u72fc',lv:10,hp:72,atk:15,def:6,agi:11,weak:['fire'],res:['ice'],pers:'irritable',rank:5,elem:'ice'},
- 'Moon Sovereign':{glyph:'\u6708',lv:13,hp:340,atk:16,def:7,agi:9,weak:[],res:['elec','wind'],pers:null,rank:0,elem:'phys',boss:true}
+ 'Slime':{glyph:'\u6ce5',lv:2,hp:30,atk:6,def:3,agi:3,dex:3,weak:['fire'],res:['phys'],pers:'foolish',rank:1,elem:'phys'},
+ 'Pixie':{glyph:'\u5996',lv:2,hp:20,atk:7,def:2,agi:8,dex:8,weak:['wind'],res:['elec'],pers:'timid',rank:1,elem:'elec'},
+ 'Goblin':{glyph:'\u9b3c',lv:3,hp:34,atk:8,def:4,agi:5,dex:5,weak:['fire'],res:[],pers:'irritable',rank:2,elem:'phys'},
+ 'Kelpie':{glyph:'\u99ac',lv:5,hp:44,atk:10,def:5,agi:7,dex:7,weak:['elec'],res:['ice'],pers:'wise',rank:3,elem:'ice'},
+ 'Nekomata':{glyph:'\u732b',lv:6,hp:40,atk:11,def:4,agi:10,dex:10,weak:['ice'],res:['phys'],pers:'foolish',rank:3,elem:'phys'},
+ 'Wight':{glyph:'\u6b7b',lv:8,hp:58,atk:13,def:6,agi:6,dex:6,weak:['fire'],res:['ice','phys'],pers:'wise',rank:4,elem:'ice'},
+ 'Fenrir':{glyph:'\u72fc',lv:10,hp:72,atk:15,def:6,agi:11,dex:11,weak:['fire'],res:['ice'],pers:'irritable',rank:5,elem:'ice'},
+ 'Moon Sovereign':{glyph:'\u6708',lv:13,hp:340,atk:16,def:7,agi:9,dex:9,weak:[],res:['elec','wind'],pers:null,rank:0,elem:'phys',boss:true}
 };
 
 var POOLS=[
@@ -268,15 +269,15 @@ var THEMES=[
 var MODE='intro', UI=[], G=null, B=null, LOGS=[], MUTED=false, DRONE=null;
 var INTRO_START=null;
 
-function newChar(name,hp,sp,str,mag,agi,masque){
- return {name:name,lv:1,xp:0,hp:hp,maxhp:hp,sp:sp,maxsp:sp,str:str,mag:mag,agi:agi,masque:masque,guard:false};
+function newChar(name,hp,sp,str,mag,agi,dex,masque){
+ return {name:name,lv:1,xp:0,hp:hp,maxhp:hp,sp:sp,maxsp:sp,str:str,mag:mag,agi:agi,dex:dex,masque:masque,guard:false};
 }
 function freshGame(){
  return {
   party:[
-   newChar('AKI',38,22,6,6,7,'Aeneas'),
-   newChar('BRAM',46,12,8,3,5,'Ajax'),
-   newChar('CORA',32,28,4,8,6,'Apsaras')
+   newChar('AKI',38,22,6,6,7,5,'Aeneas'),
+   newChar('BRAM',46,12,8,3,5,3,'Ajax'),
+   newChar('CORA',32,28,4,8,6,6,'Apsaras')
   ],
   inv:{'Medicine':2,'Lunar Dew':1,'Revive Charm':0},
   coins:40, cards:[], owned:['Aeneas','Ajax','Apsaras'],
@@ -1117,7 +1118,8 @@ function statBarsHtml(c){
  return statBarRow('str','STR',stat(c,'str'),max)
   +statBarRow('mag','MAG',stat(c,'mag'),max)
   +statBarRow('agi','AGI',stat(c,'agi'),max)
-  +statBarRow('def','DEF',charDef(c),max);
+  +statBarRow('def','DEF',charDef(c),max)
+  +statBarRow('dex','DEX',stat(c,'dex'),max);
 }
 function ctlStats(top){
  var idx=top.idx||0;
@@ -1284,6 +1286,10 @@ function facingMultiplier(attacker,defender){
  if(bestDir===(defender.facing+2)%4) return 1.5;
  return 1;
 }
+function moveRange(unit){
+ var d=unit.masque?stat(unit,'dex'):unit.dex;
+ return Math.max(1,Math.floor((d||0)/5));
+}
 function livingParty(){ var a=[]; for(var i=0;i<G.party.length;i++) if(G.party[i].hp>0) a.push(G.party[i]); return a; }
 function aliveFoes(){ var a=[]; for(var i=0;i<B.foes.length;i++) if(!B.foes[i].gone) a.push(B.foes[i]); return a; }
 function nextCmdChar(){ return B?B.current:null; }
@@ -1292,11 +1298,11 @@ function queueCmd(cmd){
  if(!actor) return;
  cmd.actor=actor;
  if(cmd.kind==='move'){
-  if(B.movedThisTurn){ log(actor.name+' has already moved this turn.'); return; }
+  if(B.movesLeft<=0){ log(actor.name+' has no movement left this turn.'); return; }
   UI=[];
   doPlayer(actor,cmd);
   if(B&&B.fled) return;
-  B.movedThisTurn=true;
+  B.movesLeft--;
   renderAll();
   return;
  }
@@ -1330,14 +1336,14 @@ function ctlBattle(top){
       UI=[{t:'ctarget'}]; SFX.sel(); renderAll();
     },'blue'),
     btnEl('ITEM',function(){UI=[{t:'items',ctx:'battle'}];SFX.sel();renderAll();}) ],
-  [ btnEl('MOVE'+(B.movedThisTurn?' (used)':''),function(){
-      if(B.movedThisTurn){ log(c.name+' has already moved this turn.'); return; }
+  [ btnEl('MOVE'+(B.movesLeft>0?' ('+B.movesLeft+')':' (used)'),function(){
+      if(B.movesLeft<=0){ log(c.name+' has no movement left this turn.'); return; }
       UI=[{t:'movedir'}];SFX.sel();renderAll();
-    }, B.movedThisTurn?'dis2':''),
+    }, B.movesLeft>0?'':'dis2'),
     btnEl('GUARD',function(){ queueCmd({kind:'guard'}); }) ],
   [ btnEl('RUN',function(){ queueCmd({kind:'run'}); },'red') ]
  );
- el('hint').textContent=c.name+' \u00b7 '+c.masque+' '+mq(c).glyph+(B.movedThisTurn?'  \u2014 you have moved; choose an action':'  \u2014 choose an action');
+ el('hint').textContent=c.name+' \u00b7 '+c.masque+' '+mq(c).glyph+(B.movesLeft>0?'  \u2014 '+B.movesLeft+' move'+(B.movesLeft===1?'':'s')+' left':'  \u2014 choose an action');
 }
 function dpadBtn(c,dx,dy,lbl){
  var nx=c.gx+dx, ny=c.gy+dy;
@@ -1355,7 +1361,7 @@ function ctlMoveDir(top){
   [ btnEl('',function(){},'dpad ghost'), dpadBtn(c,0,1,'\u25bc'), btnEl('',function(){},'dpad ghost') ],
   [ btnEl('\u2716 BACK',function(){UI=[{t:'main'}];SFX.back();renderAll();},'red') ]
  );
- el('hint').textContent='Move to an open cell \u2014 costs your turn.';
+ el('hint').textContent=B.movesLeft+' move'+(B.movesLeft===1?'':'s')+' left \u2014 pick a direction.';
 }
 function ctlSkill(top){
  var c=nextCmdChar(), sks=mq(c).skills, rws=[];
@@ -1488,7 +1494,7 @@ function advanceTurn(){
   return;
  }
  if(a.who.hp<=0){ advanceTurn(); return; }
- B.running=false; B.current=a.who; B.movedThisTurn=false; UI=[{t:'main'}]; renderAll();
+ B.running=false; B.current=a.who; B.movesLeft=moveRange(a.who); UI=[{t:'main'}]; renderAll();
 }
 function doPlayer(c,cmd){
  if(cmd.kind==='guard'){ c.guard=true; log(c.name+' takes a guarded stance.'); return true; }
@@ -1630,9 +1636,12 @@ function doEnemy(fo){
   var nearest=living[0], nd=gdist(fo,living[0]);
   for(var i2=1;i2<living.length;i2++){ var d=gdist(fo,living[i2]); if(d<nd){ nd=d; nearest=living[i2]; } }
   if(nd>1){
-   stepToward(fo,nearest);
-   log(fo.sp+' ('+fo.tag+') closes in.');
-   return true;
+   var steps=moveRange(fo);
+   for(var s=0;s<steps && gdist(fo,nearest)>1;s++){ stepToward(fo,nearest); }
+   if(gdist(fo,nearest)>1){
+    log(fo.sp+' ('+fo.tag+') closes in.');
+    return true;
+   }
   }
   t=nearest;
  } else {
@@ -1695,7 +1704,7 @@ function grantXp(xp){
   while(c.xp>=c.lv*24){
    c.xp-=c.lv*24; c.lv++;
    c.maxhp+=6; c.maxsp+=3;
-   c.str+=(c.lv%2===0?2:1); c.mag+=1; c.agi+=1;
+   c.str+=(c.lv%2===0?2:1); c.mag+=1; c.agi+=1; c.dex+=1;
    c.hp=Math.min(maxHp(c),c.hp+10); c.sp=Math.min(maxSp(c),c.sp+5);
    log('\u2605 '+c.name+' reaches level '+c.lv+'!');
    SFX.heal();
@@ -1716,14 +1725,14 @@ function randomPack(){
 function makeFoe(name,i){
  var d=ASPECTS[name];
  return {sp:name,tag:String.fromCharCode(65+i),lv:d.lv,hp:d.hp,maxhp:d.hp,
-  atk:d.atk,def:d.def,agi:d.agi,facing:3,
+  atk:d.atk,def:d.def,agi:d.agi,dex:d.dex,facing:3,
   emo:{eager:0,happy:0,scared:0,angry:0},
   gone:false,berserk:false,flash:0,boss:!!d.boss,reason:null};
 }
 function startBattle(){
  drone(false);
  var names=randomPack();
- B={foes:[],running:false,boss:false,fled:false,transStart:performance.now(),turnQueue:[],qi:0,current:null,movedThisTurn:false};
+ B={foes:[],running:false,boss:false,fled:false,transStart:performance.now(),turnQueue:[],qi:0,current:null,movesLeft:0};
  for(var i=0;i<names.length;i++) B.foes.push(makeFoe(names[i],i));
  placeParty(); placeFoes();
  MODE='battle'; UI=[{t:'main'}]; LOGS=[];
@@ -1734,7 +1743,7 @@ function startBattle(){
 }
 function bossIntro(){
  drone(false);
- B={foes:[makeFoe('Moon Sovereign',0)],running:false,boss:true,fled:false,transStart:performance.now(),turnQueue:[],qi:0,current:null,movedThisTurn:false};
+ B={foes:[makeFoe('Moon Sovereign',0)],running:false,boss:true,fled:false,transStart:performance.now(),turnQueue:[],qi:0,current:null,movesLeft:0};
  placeParty(); placeFoes();
  MODE='battle'; UI=[{t:'main'}]; LOGS=[];
  log('The gate breathes. A voice like frost: "LITTLE MASKS. YOU CAME."');
