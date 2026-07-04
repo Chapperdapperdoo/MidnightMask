@@ -1568,7 +1568,7 @@ function hitFoe(attacker,fo,dmg,elem){
  var mult=1, tag='';
  if(ASPECTS[fo.sp].weak.indexOf(elem)>=0){ mult=2; tag=' WEAK!'; }
  else if(ASPECTS[fo.sp].res.indexOf(elem)>=0){ mult=0.5; tag=' (resisted)'; }
- var fm=facingMultiplier(attacker,fo);
+ var fm=elem==='phys'?facingMultiplier(attacker,fo):1;
  mult*=fm;
  if(fm===1.5) tag+=' BACKSTAB!'; else if(fm===0.75) tag+=' (blocked front)';
  var final=Math.max(1,Math.round(dmg*mult));
@@ -1624,7 +1624,7 @@ function doEnemy(fo){
   return true;
  }
  var melee=Math.random()>=0.4;
- var elem=melee?null:ASPECTS[fo.sp].elem;
+ var elem=melee?'phys':ASPECTS[fo.sp].elem;
  var t;
  if(melee){
   var nearest=living[0], nd=gdist(fo,living[0]);
@@ -1650,7 +1650,7 @@ function hitChar(attacker,c,dmg,elem,noAffin){
   if(mq(c).weak.indexOf(elem)>=0){ mult=2; tag=' WEAK!'; }
   else if(mq(c).res.indexOf(elem)>=0){ mult=0.5; tag=' (resisted)'; }
  }
- var fm=facingMultiplier(attacker,c);
+ var fm=elem==='phys'?facingMultiplier(attacker,c):1;
  mult*=fm;
  if(fm===1.5) tag+=' BACKSTAB!'; else if(fm===0.75) tag+=' (blocked front)';
  var final=Math.round(dmg*mult - charDef(c)*0.5);

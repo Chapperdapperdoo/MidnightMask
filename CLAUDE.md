@@ -157,6 +157,9 @@ attacking from the direction the defender is looking is a front hit (0.75x),
 from the opposite direction is a backstab (1.5x), anything else is a side hit
 (1x) — and `hitFoe`/`hitChar` both take the attacker as their first argument
 specifically to apply this multiplier alongside the elemental weak/resist one.
+It only applies when `elem==='phys'` (basic ATTACK, phys skills, and enemy
+melee rolls) — elemental hits ignore facing entirely, so `doEnemy` tags its
+melee roll `'phys'` rather than `null` specifically so this check catches it.
 
 Basic ATTACK and any `elem:'phys'` skill are melee-only
 (`isMelee()`), requiring `gdist()<=1` (Chebyshev distance) to the target;
