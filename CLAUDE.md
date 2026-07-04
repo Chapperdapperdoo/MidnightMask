@@ -145,8 +145,20 @@ distance/row varies battle to battle instead of always facing the party head-on.
 commands it doesn't end the turn: `queueCmd` special-cases `kind==='move'` to
 apply it and redisplay the same actor's menu with `B.movedThisTurn` set, so a
 character can reposition once and still attack/cast/etc. in that same turn;
-`B.movedThisTurn` resets in `advanceTurn` when a new turn begins. Basic ATTACK
-and any `elem:'phys'` skill are melee-only
+`B.movedThisTurn` resets in `advanceTurn` when a new turn begins.
+
+Every combatant also has a `facing` (0-3, same N/E/S/W convention as `fwd()`),
+drawn as a small triangle on their token (`drawFacingArrow`). It's set on
+placement (party faces east, foes face west) and updated to match whichever
+direction a character last moved (`dirFromDelta`, applied in both the player
+`move` handler and `stepToward`'s enemy AI). `facingMultiplier(attacker,
+defender)` compares the attacker's position against the defender's facing —
+attacking from the direction the defender is looking is a front hit (0.75x),
+from the opposite direction is a backstab (1.5x), anything else is a side hit
+(1x) — and `hitFoe`/`hitChar` both take the attacker as their first argument
+specifically to apply this multiplier alongside the elemental weak/resist one.
+
+Basic ATTACK and any `elem:'phys'` skill are melee-only
 (`isMelee()`), requiring `gdist()<=1` (Chebyshev distance) to the target;
 `ctlTarget` greys out foes out of reach. Elemental single-target skills are
 unlimited range. Skills with `area:'col'`/`'row'` in `SKILLS` hit every living
