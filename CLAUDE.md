@@ -50,7 +50,7 @@ Game content is defined as plain object/array literals, not code — extend the
 game by editing these, not by writing new logic:
 - `SKILLS` — skill name → {cost, elem, pow, targ, type}
 - `MASQUES` — playable "persona" name → {glyph, skills, res, weak, b (stat bonuses)}
-- `ASPECTS` — enemy/recruitable aspect → {glyph, lv, hp, atk, def, agi, weak, res, pers, rank, elem}
+- `ASPECTS` — enemy/recruitable aspect → {glyph, lv, hp, atk, def, agi, dex, weak, res, pers, rank, elem}
 - `POOLS` — per-floor random encounter aspect pools
 - `REACT` — aspect personality → CONTACT action → emotion reaction table (persuasion mechanic)
 - `ITEMS`, `MOONS`, `FLOOR_NAMES`, `LOOT_TABLE` (weighted chest-loot rolls, see below)
@@ -143,9 +143,19 @@ distance/row varies battle to battle instead of always facing the party head-on.
 `MOVE` is a command like any other action (`cmd.kind==='move'`), resolved in
 `doPlayer` same as attacks — positioning is not free — but unlike other
 commands it doesn't end the turn: `queueCmd` special-cases `kind==='move'` to
-apply it and redisplay the same actor's menu with `B.movedThisTurn` set, so a
-character can reposition once and still attack/cast/etc. in that same turn;
-`B.movedThisTurn` resets in `advanceTurn` when a new turn begins.
+apply it and redisplay the same actor's menu with `B.movesLeft` decremented,
+so a character can reposition (possibly more than once — see below) and still
+attack/cast/etc. in that same turn; `advanceTurn` resets `B.movesLeft` via
+`moveRange()` when a new turn begins.
+
+`dex` is a fifth character/aspect stat (alongside str/mag/agi, shown in the
+STATS screen's bar graphs) that governs battle movement: `moveRange(unit)` is
+`max(1, floor(dex/5))` — every 5 points of DEX grants one more grid cell of
+movement per turn, with a floor of 1 even at low DEX. This applies to both
+the player (`B.movesLeft`, decremented per successful MOVE) and enemy AI
+(`doEnemy`'s melee branch loops `stepToward()` up to `moveRange(fo)` times,
+stopping early once adjacent, so a fast foe can close several cells and still
+attack in the same turn).
 
 Every combatant also has a `facing` (0-3, same N/E/S/W convention as `fwd()`),
 drawn as a small triangle on their token (`drawFacingArrow`). It's set on
