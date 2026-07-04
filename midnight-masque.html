@@ -76,6 +76,17 @@ button.ghost{visibility:hidden;pointer-events:none;}
 /* ============ DATA ============ */
 var W=480,H=360;
 var ELN={phys:'Phys',fire:'Fire',ice:'Ice',elec:'Elec',wind:'Wind'};
+var ELEM_COLOR={
+ phys:{fill:'#d8cfa0',glow:'#8a7f4a'},
+ fire:{fill:'#ffb08a',glow:'#e0562a'},
+ ice:{fill:'#9fe0ff',glow:'#2a8fc0'},
+ elec:{fill:'#f0e08a',glow:'#c0a82a'},
+ wind:{fill:'#9be8c0',glow:'#2ab070'}
+};
+function foeColor(fo){
+ var weak=ASPECTS[fo.sp].weak;
+ return (weak && weak.length) ? ELEM_COLOR[weak[0]] : null;
+}
 
 var SKILLS={
  'Cinder':{cost:4,elem:'fire',pow:16,targ:'one',type:'dmg'},
@@ -674,15 +685,16 @@ function drawFoeTokens(t){
   var fo=B.foes[i]; if(fo.gone) continue;
   var r=cellRect(fo.gx,fo.gy);
   var cx=r.cx, cy=r.y+20+Math.sin(t/420+i*1.7)*2;
+  var ec=foeColor(fo);
   CTX.save();
-  CTX.strokeStyle = fo.berserk ? '#e0364a' : '#5a7db8';
+  CTX.strokeStyle = fo.berserk ? '#e0364a' : (ec?ec.glow:'#5a7db8');
   CTX.globalAlpha=0.9; CTX.lineWidth=1.2;
   CTX.beginPath();
   CTX.moveTo(cx,cy-17); CTX.lineTo(cx+16,cy); CTX.lineTo(cx,cy+17); CTX.lineTo(cx-16,cy);
   CTX.closePath(); CTX.stroke();
   CTX.font='20px Georgia'; CTX.textAlign='center'; CTX.textBaseline='middle';
-  CTX.fillStyle = fo.flash>0 ? '#ffffff' : (fo.berserk?'#ff8494':'#dfe7f7');
-  CTX.shadowColor = fo.berserk?'#e0364a':'#5a7df0'; CTX.shadowBlur=8;
+  CTX.fillStyle = fo.flash>0 ? '#ffffff' : (fo.berserk?'#ff8494':(ec?ec.fill:'#dfe7f7'));
+  CTX.shadowColor = fo.berserk?'#e0364a':(ec?ec.glow:'#5a7df0'); CTX.shadowBlur=8;
   CTX.fillText(ASPECTS[fo.sp].glyph, cx, cy);
   CTX.shadowBlur=0;
   CTX.font='8px ui-monospace,Menlo,monospace'; CTX.fillStyle='#aebbd8';
