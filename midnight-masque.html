@@ -76,6 +76,17 @@ button.ghost{visibility:hidden;pointer-events:none;}
 /* ============ DATA ============ */
 var W=480,H=360;
 var ELN={phys:'Phys',fire:'Fire',ice:'Ice',elec:'Elec',wind:'Wind'};
+var ELEM_COLOR={
+ phys:{fill:'#d8cfa0',glow:'#8a7f4a'},
+ fire:{fill:'#ffb08a',glow:'#e0562a'},
+ ice:{fill:'#9fe0ff',glow:'#2a8fc0'},
+ elec:{fill:'#f0e08a',glow:'#c0a82a'},
+ wind:{fill:'#9be8c0',glow:'#2ab070'}
+};
+function foeColor(fo){
+ var weak=ASPECTS[fo.sp].weak;
+ return (weak && weak.length) ? ELEM_COLOR[weak[0]] : null;
+}
 
 var SKILLS={
  'Cinder':{cost:4,elem:'fire',pow:16,targ:'one',type:'dmg'},
@@ -669,22 +680,39 @@ function drawActiveHighlight(){
  CTX.strokeRect(r.x+3,r.y+3,r.w-6,r.h-6);
  CTX.restore();
 }
+function drawFacingArrow(cx,cy,facing,color){
+ if(facing==null) return;
+ var v=fwd(facing), px=-v[1], py=v[0];
+ var tipX=cx+v[0]*25, tipY=cy+v[1]*25;
+ var baseX=cx+v[0]*17, baseY=cy+v[1]*17;
+ var w=4.5;
+ CTX.save();
+ CTX.fillStyle=color; CTX.globalAlpha=0.95;
+ CTX.beginPath();
+ CTX.moveTo(tipX,tipY);
+ CTX.lineTo(baseX+px*w,baseY+py*w);
+ CTX.lineTo(baseX-px*w,baseY-py*w);
+ CTX.closePath(); CTX.fill();
+ CTX.restore();
+}
 function drawFoeTokens(t){
  for(var i=0;i<B.foes.length;i++){
   var fo=B.foes[i]; if(fo.gone) continue;
   var r=cellRect(fo.gx,fo.gy);
   var cx=r.cx, cy=r.y+20+Math.sin(t/420+i*1.7)*2;
+  var ec=foeColor(fo);
   CTX.save();
-  CTX.strokeStyle = fo.berserk ? '#e0364a' : '#5a7db8';
+  CTX.strokeStyle = fo.berserk ? '#e0364a' : (ec?ec.glow:'#5a7db8');
   CTX.globalAlpha=0.9; CTX.lineWidth=1.2;
   CTX.beginPath();
   CTX.moveTo(cx,cy-17); CTX.lineTo(cx+16,cy); CTX.lineTo(cx,cy+17); CTX.lineTo(cx-16,cy);
   CTX.closePath(); CTX.stroke();
   CTX.font='20px Georgia'; CTX.textAlign='center'; CTX.textBaseline='middle';
-  CTX.fillStyle = fo.flash>0 ? '#ffffff' : (fo.berserk?'#ff8494':'#dfe7f7');
-  CTX.shadowColor = fo.berserk?'#e0364a':'#5a7df0'; CTX.shadowBlur=8;
+  CTX.fillStyle = fo.flash>0 ? '#ffffff' : (fo.berserk?'#ff8494':(ec?ec.fill:'#dfe7f7'));
+  CTX.shadowColor = fo.berserk?'#e0364a':(ec?ec.glow:'#5a7df0'); CTX.shadowBlur=8;
   CTX.fillText(ASPECTS[fo.sp].glyph, cx, cy);
   CTX.shadowBlur=0;
+  drawFacingArrow(cx,cy,fo.facing,fo.berserk?'#e0364a':(ec?ec.glow:'#5a7db8'));
   CTX.font='8px ui-monospace,Menlo,monospace'; CTX.fillStyle='#aebbd8';
   CTX.fillText(fo.tag+' '+fo.sp, cx, r.y+44);
   var bw=50;
@@ -715,6 +743,7 @@ function drawPartyTokens(){
   CTX.font='20px Georgia'; CTX.textAlign='center'; CTX.textBaseline='middle';
   CTX.fillStyle='#e8e4da';
   CTX.fillText(mq(c).glyph, cx, cy);
+  drawFacingArrow(cx,cy,c.facing,c.guard?'#57d0a0':'#8fb0d8');
   CTX.font='8px ui-monospace,Menlo,monospace'; CTX.fillStyle='#aebbd8';
   CTX.fillText(c.name, cx, r.y+44);
   var bw=50;
@@ -1227,11 +1256,33 @@ function isMelee(mode,skillName){
 }
 function placeParty(){
  var rows=centeredRows(G.party.length);
- for(var i=0;i<G.party.length;i++){ G.party[i].gx=GRID_PARTY_COL; G.party[i].gy=rows[i]; }
+ for(var i=0;i<G.party.length;i++){ G.party[i].gx=GRID_PARTY_COL; G.party[i].gy=rows[i]; G.party[i].facing=1; }
 }
 function placeFoes(){
- var rows=centeredRows(B.foes.length);
- for(var i=0;i<B.foes.length;i++){ B.foes[i].gx=GRID_FOE_COL; B.foes[i].gy=rows[i]; }
+ var cells=[];
+ for(var gx=GRID_PARTY_COL+1;gx<GRID_W;gx++) for(var gy=0;gy<GRID_H;gy++) cells.push([gx,gy]);
+ for(var i=cells.length-1;i>0;i--){ var j=rnd(i+1); var tmp=cells[i]; cells[i]=cells[j]; cells[j]=tmp; }
+ for(var k=0;k<B.foes.length;k++){ B.foes[k].gx=cells[k][0]; B.foes[k].gy=cells[k][1]; B.foes[k].facing=3; }
+}
+function dirFromDelta(dx,dy){
+ if(dx===0&&dy===-1) return 0;
+ if(dx===1&&dy===0) return 1;
+ if(dx===0&&dy===1) return 2;
+ if(dx===-1&&dy===0) return 3;
+ return null;
+}
+function facingMultiplier(attacker,defender){
+ if(defender.facing==null || attacker===defender) return 1;
+ var dx=attacker.gx-defender.gx, dy=attacker.gy-defender.gy;
+ if(dx===0&&dy===0) return 1;
+ var best=-Infinity, bestDir=defender.facing;
+ for(var d=0;d<4;d++){
+  var v=fwd(d), dot=v[0]*dx+v[1]*dy;
+  if(dot>best){ best=dot; bestDir=d; }
+ }
+ if(bestDir===defender.facing) return 0.75;
+ if(bestDir===(defender.facing+2)%4) return 1.5;
+ return 1;
 }
 function livingParty(){ var a=[]; for(var i=0;i<G.party.length;i++) if(G.party[i].hp>0) a.push(G.party[i]); return a; }
 function aliveFoes(){ var a=[]; for(var i=0;i<B.foes.length;i++) if(!B.foes[i].gone) a.push(B.foes[i]); return a; }
@@ -1240,6 +1291,15 @@ function queueCmd(cmd){
  var actor=B.current;
  if(!actor) return;
  cmd.actor=actor;
+ if(cmd.kind==='move'){
+  if(B.movedThisTurn){ log(actor.name+' has already moved this turn.'); return; }
+  UI=[];
+  doPlayer(actor,cmd);
+  if(B&&B.fled) return;
+  B.movedThisTurn=true;
+  renderAll();
+  return;
+ }
  UI=[]; B.running=true; B.current=null; renderAll();
  var acted=doPlayer(actor,cmd);
  if(B&&B.fled) return;
@@ -1270,11 +1330,14 @@ function ctlBattle(top){
       UI=[{t:'ctarget'}]; SFX.sel(); renderAll();
     },'blue'),
     btnEl('ITEM',function(){UI=[{t:'items',ctx:'battle'}];SFX.sel();renderAll();}) ],
-  [ btnEl('MOVE',function(){UI=[{t:'movedir'}];SFX.sel();renderAll();}),
+  [ btnEl('MOVE'+(B.movedThisTurn?' (used)':''),function(){
+      if(B.movedThisTurn){ log(c.name+' has already moved this turn.'); return; }
+      UI=[{t:'movedir'}];SFX.sel();renderAll();
+    }, B.movedThisTurn?'dis2':''),
     btnEl('GUARD',function(){ queueCmd({kind:'guard'}); }) ],
   [ btnEl('RUN',function(){ queueCmd({kind:'run'}); },'red') ]
  );
- el('hint').textContent=c.name+' \u00b7 '+c.masque+' '+mq(c).glyph+'  \u2014 choose an action';
+ el('hint').textContent=c.name+' \u00b7 '+c.masque+' '+mq(c).glyph+(B.movedThisTurn?'  \u2014 you have moved; choose an action':'  \u2014 choose an action');
 }
 function dpadBtn(c,dx,dy,lbl){
  var nx=c.gx+dx, ny=c.gy+dy;
@@ -1425,7 +1488,7 @@ function advanceTurn(){
   return;
  }
  if(a.who.hp<=0){ advanceTurn(); return; }
- B.running=false; B.current=a.who; UI=[{t:'main'}]; renderAll();
+ B.running=false; B.current=a.who; B.movedThisTurn=false; UI=[{t:'main'}]; renderAll();
 }
 function doPlayer(c,cmd){
  if(cmd.kind==='guard'){ c.guard=true; log(c.name+' takes a guarded stance.'); return true; }
@@ -1433,6 +1496,7 @@ function doPlayer(c,cmd){
   var nx=c.gx+cmd.dx, ny=c.gy+cmd.dy;
   if(!inBounds(nx,ny) || occupantAt(nx,ny,c)){ log(c.name+' has nowhere to move.'); return true; }
   c.gx=nx; c.gy=ny;
+  c.facing=dirFromDelta(cmd.dx,cmd.dy);
   log(c.name+' repositions.');
   return true;
  }
@@ -1455,7 +1519,7 @@ function doPlayer(c,cmd){
   var dmg=stat(c,'str')*2+rnd(6)-fo.def;
   if(dmg<1) dmg=1;
   log(c.name+' strikes '+fo.tag+'.');
-  hitFoe(fo,dmg,'phys'); return true;
+  hitFoe(c,fo,dmg,'phys'); return true;
  }
  if(cmd.kind==='skill'){
   var s=SKILLS[cmd.skill];
@@ -1486,13 +1550,13 @@ function doPlayer(c,cmd){
    }
    for(var h=0;h<hits.length;h++){
     var raw=s.pow+Math.round(stat(c,'mag')*1.6)-Math.round(hits[h].def*0.6);
-    if(raw<1) raw=1; hitFoe(hits[h],raw,s.elem);
+    if(raw<1) raw=1; hitFoe(c,hits[h],raw,s.elem);
    }
   } else {
    var raw2=s.pow+Math.round(stat(c,'mag')*1.6)-Math.round(anchor.def*0.6);
    if(raw2<1) raw2=1;
    log(c.name+' casts '+cmd.skill+' at '+anchor.tag+'.');
-   hitFoe(anchor,raw2,s.elem);
+   hitFoe(c,anchor,raw2,s.elem);
   }
   return true;
  }
@@ -1500,13 +1564,16 @@ function doPlayer(c,cmd){
  return true;
 }
 function pickAliveFoe(){ var a=aliveFoes(); return a.length?a[rnd(a.length)]:null; }
-function hitFoe(fo,dmg,elem){
+function hitFoe(attacker,fo,dmg,elem){
  var mult=1, tag='';
  if(ASPECTS[fo.sp].weak.indexOf(elem)>=0){ mult=2; tag=' WEAK!'; }
  else if(ASPECTS[fo.sp].res.indexOf(elem)>=0){ mult=0.5; tag=' (resisted)'; }
+ var fm=elem==='phys'?facingMultiplier(attacker,fo):1;
+ mult*=fm;
+ if(fm===1.5) tag+=' BACKSTAB!'; else if(fm===0.75) tag+=' (blocked front)';
  var final=Math.max(1,Math.round(dmg*mult));
  fo.hp-=final; fo.flash=1;
- if(mult===2) SFX.weak(); else SFX.hit();
+ if(fm===1.5||mult>=2) SFX.weak(); else SFX.hit();
  log('\u2192 '+final+' damage to '+fo.tag+'.'+tag);
  if(fo.hp<=0){ fo.gone=true; fo.reason='killed'; log(fo.sp+' ('+fo.tag+') is destroyed.'); SFX.die(); }
 }
@@ -1545,19 +1612,19 @@ function doContact(c,act,fo){
 function stepToward(fo,target){
  var dx=target.gx-fo.gx, dy=target.gy-fo.gy;
  var sx=dx>0?1:dx<0?-1:0, sy=dy>0?1:dy<0?-1:0;
- if(sx!==0 && !occupantAt(fo.gx+sx,fo.gy,fo)){ fo.gx+=sx; return; }
- if(sy!==0 && !occupantAt(fo.gx,fo.gy+sy,fo)){ fo.gy+=sy; return; }
+ if(sx!==0 && !occupantAt(fo.gx+sx,fo.gy,fo)){ fo.gx+=sx; fo.facing=dirFromDelta(sx,0); return; }
+ if(sy!==0 && !occupantAt(fo.gx,fo.gy+sy,fo)){ fo.gy+=sy; fo.facing=dirFromDelta(0,sy); return; }
 }
 function doEnemy(fo){
  var living=livingParty();
  if(living.length===0) return true;
  if(fo.boss && Math.random()<0.45){
   log('Moon Sovereign gathers the dark \u2014 LUNAR RAY sweeps the party!');
-  for(var i=0;i<living.length;i++) hitChar(living[i], 10+fo.lv, null, true);
+  for(var i=0;i<living.length;i++) hitChar(fo, living[i], 10+fo.lv, null, true);
   return true;
  }
  var melee=Math.random()>=0.4;
- var elem=melee?null:ASPECTS[fo.sp].elem;
+ var elem=melee?'phys':ASPECTS[fo.sp].elem;
  var t;
  if(melee){
   var nearest=living[0], nd=gdist(fo,living[0]);
@@ -1574,15 +1641,18 @@ function doEnemy(fo){
  var base=fo.atk*(fo.berserk?1.6:1)*(G.moon===4?1.2:1);
  var pow=Math.round(base*2)+rnd(5);
  log(fo.sp+' ('+fo.tag+') lunges at '+t.name+'.');
- hitChar(t,pow,elem,false);
+ hitChar(fo,t,pow,elem,false);
  return true;
 }
-function hitChar(c,dmg,elem,noAffin){
+function hitChar(attacker,c,dmg,elem,noAffin){
  var mult=1, tag='';
  if(!noAffin && elem){
   if(mq(c).weak.indexOf(elem)>=0){ mult=2; tag=' WEAK!'; }
   else if(mq(c).res.indexOf(elem)>=0){ mult=0.5; tag=' (resisted)'; }
  }
+ var fm=elem==='phys'?facingMultiplier(attacker,c):1;
+ mult*=fm;
+ if(fm===1.5) tag+=' BACKSTAB!'; else if(fm===0.75) tag+=' (blocked front)';
  var final=Math.round(dmg*mult - charDef(c)*0.5);
  if(c.guard) final=Math.round(final*0.5);
  if(final<1) final=1;
@@ -1646,14 +1716,14 @@ function randomPack(){
 function makeFoe(name,i){
  var d=ASPECTS[name];
  return {sp:name,tag:String.fromCharCode(65+i),lv:d.lv,hp:d.hp,maxhp:d.hp,
-  atk:d.atk,def:d.def,agi:d.agi,
+  atk:d.atk,def:d.def,agi:d.agi,facing:3,
   emo:{eager:0,happy:0,scared:0,angry:0},
   gone:false,berserk:false,flash:0,boss:!!d.boss,reason:null};
 }
 function startBattle(){
  drone(false);
  var names=randomPack();
- B={foes:[],running:false,boss:false,fled:false,transStart:performance.now(),turnQueue:[],qi:0,current:null};
+ B={foes:[],running:false,boss:false,fled:false,transStart:performance.now(),turnQueue:[],qi:0,current:null,movedThisTurn:false};
  for(var i=0;i<names.length;i++) B.foes.push(makeFoe(names[i],i));
  placeParty(); placeFoes();
  MODE='battle'; UI=[{t:'main'}]; LOGS=[];
@@ -1664,7 +1734,7 @@ function startBattle(){
 }
 function bossIntro(){
  drone(false);
- B={foes:[makeFoe('Moon Sovereign',0)],running:false,boss:true,fled:false,transStart:performance.now(),turnQueue:[],qi:0,current:null};
+ B={foes:[makeFoe('Moon Sovereign',0)],running:false,boss:true,fled:false,transStart:performance.now(),turnQueue:[],qi:0,current:null,movedThisTurn:false};
  placeParty(); placeFoes();
  MODE='battle'; UI=[{t:'main'}]; LOGS=[];
  log('The gate breathes. A voice like frost: "LITTLE MASKS. YOU CAME."');
