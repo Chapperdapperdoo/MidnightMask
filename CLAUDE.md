@@ -86,6 +86,32 @@ clipped to each wall segment. `drawFront`/`drawSide` take the animation
 timestamp `t` so decor can animate (e.g. the psychedelic hue rotation);
 `draw3D(t)` is what threads `t` down from `drawScene`.
 
+### Pixel art (no image assets)
+
+All character/object art is hand-authored pixel art rendered with plain
+`CTX.fillRect` calls — there are no image files, sprite sheets, or data-URI
+assets anywhere in the file, keeping the single-file/no-external-assets rule
+intact. `drawPixelArt(rows, pal, x, y, ps)` (CANVAS/RENDERING section) is the
+one generic renderer: `rows` is an array of equal-length strings where each
+character is a key into the `pal` palette object (`'.'` = transparent), and
+`ps` is the on-screen size of one pixel. Sprite data lives in the DATA section
+(right after `THEMES`) and is built once at load time, not hand-typed at full
+width: `mirrorH(half)` mirrors a half-row into a symmetric full row, and
+`bustHalfRows(hairW, faceW, collarW, w)` / `pxFillRow` / `pxSetCh` are small
+helpers for building symmetric silhouettes (a row's "width" is how many
+pixels are filled in from the center outward) that individual sprites then
+tweak with a few manual overrides (hair spikes, an armor-trim row, an eye
+dot). This produced three tables: `TILE_ICONS` (keyed by map tile character
+`V`/`H`/`T`/`B`/`>` — door/spring/chest/boss-gate/stairs — each with `rows`,
+`pal`, and a `glow` shadow color, drawn by `drawSpecials()`), `PORTRAITS`
+(keyed by party member name — `AKI`/`BRAM`/`CORA` — drawn by `drawMasqueCard()`
+on the ASPECTS screen), and `MAESTRO_ROWS`/`MAESTRO_PAL` (the hooded watermark
+figure drawn behind the title in `drawVelvet()`). When adding a new tile type
+or party member, add sprite data here rather than falling back to emoji/text
+glyphs — `glyph` fields in `MASQUES`/`ASPECTS` still exist and are used in
+compact HTML contexts (STATS screen, battle-token labels) where a full pixel
+sprite doesn't fit.
+
 ### Exploration / dungeon generation
 
 Floor layouts are procedurally generated, not fixed: `genFloorMap()` carves a
