@@ -907,7 +907,7 @@ function afterStep(){
  else if(c==='B' && !G.bossDead) log('The air freezes. Something vast waits ahead. (interact to face it)');
  if('SVH>B'.indexOf(c)<0){
   var full=G.moon===4;
-  var rate= full?0.2:0.13;
+  var rate= full?0.1:0.065;
   if(Math.random()<rate) startBattle();
  }
  renderAll();
