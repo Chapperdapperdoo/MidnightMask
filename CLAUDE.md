@@ -61,7 +61,8 @@ per run (see "Exploration / dungeon generation").
 ### Global state, not modules
 
 Four globals hold all mutable state: `MODE` (a string state machine: `'intro'`,
-`'title'`, `'explore'`, `'battle'`, `'velvet'`, `'gameover'`, `'victory'`), `UI` (a stack of
+`'title'`, `'explore'`, `'battle'`, `'velvet'`, `'masque'`, `'gameover'`,
+`'victory'`), `UI` (a stack of
 menu-context objects, e.g. `{t:'items',ctx:'battle'}`), `G` (the save-game
 object: party, inventory, position, floor, moon phase, etc. — this whole object
 is JSON-serialized for save/load), and `B` (transient battle state, `null`
@@ -117,6 +118,16 @@ calls the matching `ctl*` function, which builds buttons via `rows()`/`btnEl()`
 and writes them into `#ctl`. Pushing `{t:'...'}` onto `UI` drills into a
 submenu; `popUI()` / Escape pops back out. Follow this pattern for any new menu
 rather than adding parallel UI state.
+
+Two different patterns exist for "screens," and which one to use depends on
+whether the dungeon view should stay visible underneath: a `UI`-stack entry
+(e.g. `{t:'stats'}`) renders as buttons/text in `#ctl` while `MODE` stays
+`'explore'`, so `draw3D` keeps rendering the hallway behind it — this is what
+STATS/CARDS/ITEMS do. A dedicated `MODE` value (e.g. `'velvet'` for the Azure
+Room, `'masque'` for the ASPECTS party-portrait screen) instead takes over
+`drawScene`'s canvas entirely with its own `draw*` function, with its own
+`enter*`/`leave*` pair setting `MODE` back to `'explore'`. Use a `MODE` switch
+when the screen should replace the exploration view rather than float above it.
 
 ### Battle flow
 

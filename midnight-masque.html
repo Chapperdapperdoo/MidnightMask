@@ -825,12 +825,63 @@ function drawVictory(t){
  CTX.fillStyle='#7a8199'; CTX.font='italic 13px Georgia';
  CTX.fillText('"Until the next mask, child." \u2014 the Maestro',W/2,288);
 }
+function drawMasqueCard(c,x,y,w,t){
+ var m=mq(c);
+ var ec=ELEM_COLOR[m.res[0]]||{fill:'#dfe7f7',glow:'#5a7df0'};
+ var cx=x+w/2;
+ CTX.save();
+ CTX.globalAlpha=c.hp<=0?0.4:1;
+ CTX.textAlign='center';
+ var fx=x+8, fy=y, fw=w-16, fh=100;
+ CTX.fillStyle='rgba(255,255,255,0.03)'; CTX.fillRect(fx,fy,fw,fh);
+ CTX.strokeStyle=ec.glow; CTX.lineWidth=1.4; CTX.strokeRect(fx+0.5,fy+0.5,fw-1,fh-1);
+ CTX.font='52px Georgia'; CTX.textBaseline='middle';
+ CTX.fillStyle=ec.fill; CTX.shadowColor=ec.glow; CTX.shadowBlur=14;
+ var bob=Math.sin(t/600+c.name.charCodeAt(0))*2;
+ CTX.fillText(m.glyph,cx,fy+fh/2+bob);
+ CTX.shadowBlur=0;
+ CTX.textBaseline='alphabetic';
+ CTX.font='600 12px Georgia'; CTX.fillStyle='#e8e4da';
+ CTX.fillText(c.name+'  L'+c.lv,cx,fy+fh+18);
+ CTX.font='11px Georgia'; CTX.fillStyle='#aebbd8';
+ CTX.fillText(c.masque,cx,fy+fh+33);
+ var bw=w-24, bx=x+12, by=fy+fh+42;
+ CTX.fillStyle='#141827'; CTX.fillRect(bx,by,bw,5);
+ CTX.fillStyle='#d43148'; CTX.fillRect(bx,by,bw*Math.max(0,c.hp)/maxHp(c),5);
+ CTX.textAlign='left'; CTX.font='8px ui-monospace,Menlo,monospace'; CTX.fillStyle='#7a8199';
+ CTX.fillText('HP '+Math.max(0,c.hp)+'/'+maxHp(c),bx,by+13);
+ var by2=by+18;
+ CTX.fillStyle='#141827'; CTX.fillRect(bx,by2,bw,5);
+ CTX.fillStyle='#4f8fd0'; CTX.fillRect(bx,by2,bw*c.sp/maxSp(c),5);
+ CTX.fillStyle='#7a8199';
+ CTX.fillText('SP '+c.sp+'/'+maxSp(c),bx,by2+13);
+ var sy=by2+26;
+ CTX.font='8.5px ui-monospace,Menlo,monospace'; CTX.fillStyle='#c9d4ee';
+ CTX.fillText('STR'+stat(c,'str')+' MAG'+stat(c,'mag')+' AGI'+stat(c,'agi'),bx,sy);
+ CTX.fillText('DEF'+charDef(c)+' DEX'+stat(c,'dex'),bx,sy+12);
+ CTX.fillStyle='#7a8199';
+ CTX.fillText('Res '+elemList(m.res),bx,sy+28);
+ CTX.fillText('Weak '+elemList(m.weak),bx,sy+40);
+ CTX.restore();
+}
+function drawMasqueParty(t){
+ var g=CTX.createLinearGradient(0,0,0,H);
+ g.addColorStop(0,'#0a0d1c'); g.addColorStop(1,'#050609');
+ CTX.fillStyle=g; CTX.fillRect(0,0,W,H);
+ CTX.textAlign='center'; CTX.fillStyle='#c9d4ee'; CTX.font='600 16px Georgia';
+ CTX.fillText('THE MASKS WORN',W/2,22);
+ var colW=W/G.party.length;
+ CTX.strokeStyle='rgba(90,125,184,0.18)'; CTX.lineWidth=1;
+ for(var i=1;i<G.party.length;i++){ CTX.beginPath(); CTX.moveTo(i*colW,30); CTX.lineTo(i*colW,H-8); CTX.stroke(); }
+ for(var j=0;j<G.party.length;j++){ drawMasqueCard(G.party[j],j*colW,32,colW,t); }
+}
 function drawScene(t){
  if(MODE==='intro') drawIntro();
  else if(MODE==='title') drawTitle(t);
  else if(MODE==='explore'&&G){ draw3D(t); drawSpecials(); drawMinimap(); drawMoonHud(); }
  else if(MODE==='battle') drawBattle(t);
  else if(MODE==='velvet'&&G) drawVelvet(t);
+ else if(MODE==='masque'&&G) drawMasqueParty(t);
  else if(MODE==='gameover') drawGameover(t);
  else if(MODE==='victory') drawVictory(t);
 }
@@ -960,6 +1011,7 @@ function refreshCtl(){
  if(MODE==='gameover'){ rows([btnEl('RETURN TO TITLE',toTitle,'red')]); el('hint').textContent=''; return; }
  if(MODE==='victory'){ rows([btnEl('RETURN TO TITLE',toTitle,'blue')]); el('hint').textContent=''; return; }
  if(MODE==='velvet'){ ctlVelvet(); return; }
+ if(MODE==='masque'){ ctlMasqueParty(); return; }
  if(MODE==='battle'){ ctlBattle(UI[UI.length-1]||{t:'main'}); return; }
  var top=UI[UI.length-1];
  if(!top){ ctlDpad(); return; }
@@ -990,7 +1042,8 @@ function ctlMenu(){
     btnEl('MASQUES',function(){UI.push({t:'mchar',ctx:'field'});SFX.sel();renderAll();}) ],
   [ btnEl('STATS',function(){UI.push({t:'stats'});SFX.sel();renderAll();}),
     btnEl('CARDS ('+G.cards.length+')',function(){UI.push({t:'cards'});SFX.sel();renderAll();}) ],
-  [ btnEl('OBOLS: '+G.coins,function(){},'dis') ],
+  [ btnEl('ASPECTS',function(){enterMasqueParty();}),
+    btnEl('OBOLS: '+G.coins,function(){},'dis') ],
   [ btnEl('SAVE',function(){saveGame();}), btnEl('LOAD',function(){loadGame();}) ],
   [ btnEl(MUTED?'SOUND: OFF':'SOUND: ON',toggleSound),
     btnEl('\u2716 CLOSE',popUI,'red') ]
@@ -1145,6 +1198,12 @@ function ctlStats(top){
 /* ============ AZURE ROOM ============ */
 function enterVelvet(){ MODE='velvet'; UI=[]; drone(false); SFX.card(); log('You step into the Azure Room. The Maestro inclines his head.'); renderAll(); }
 function leaveVelvet(){ MODE='explore'; UI=[]; if(!MUTED) drone(true); SFX.back(); log('You return to the catacomb.'); renderAll(); }
+function enterMasqueParty(){ MODE='masque'; UI=[]; drone(false); SFX.sel(); renderAll(); }
+function leaveMasqueParty(){ MODE='explore'; UI=[]; if(!MUTED) drone(true); SFX.back(); renderAll(); }
+function ctlMasqueParty(){
+ rows([ btnEl('✖ LEAVE',leaveMasqueParty,'red') ]);
+ el('hint').textContent='';
+}
 function ctlVelvet(){
  var top=UI[UI.length-1];
  if(top&&top.t==='fuseA'){ ctlFuse(top); return; }
