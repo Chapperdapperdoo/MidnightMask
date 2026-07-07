@@ -86,31 +86,43 @@ clipped to each wall segment. `drawFront`/`drawSide` take the animation
 timestamp `t` so decor can animate (e.g. the psychedelic hue rotation);
 `draw3D(t)` is what threads `t` down from `drawScene`.
 
-### Pixel art (no image assets)
+### Pixel art and vector portraits (no image assets)
 
-All character/object art is hand-authored pixel art rendered with plain
-`CTX.fillRect` calls — there are no image files, sprite sheets, or data-URI
-assets anywhere in the file, keeping the single-file/no-external-assets rule
-intact. `drawPixelArt(rows, pal, x, y, ps)` (CANVAS/RENDERING section) is the
-one generic renderer: `rows` is an array of equal-length strings where each
-character is a key into the `pal` palette object (`'.'` = transparent), and
-`ps` is the on-screen size of one pixel. Sprite data lives in the DATA section
-(right after `THEMES`) and is built once at load time, not hand-typed at full
-width: `mirrorH(half)` mirrors a half-row into a symmetric full row, and
-`bustHalfRows(hairW, faceW, collarW, w)` / `pxFillRow` / `pxSetCh` are small
-helpers for building symmetric silhouettes (a row's "width" is how many
-pixels are filled in from the center outward) that individual sprites then
-tweak with a few manual overrides (hair spikes, an armor-trim row, an eye
-dot). This produced three tables: `TILE_ICONS` (keyed by map tile character
-`V`/`H`/`T`/`B`/`>` — door/spring/chest/boss-gate/stairs — each with `rows`,
-`pal`, and a `glow` shadow color, drawn by `drawSpecials()`), `PORTRAITS`
-(keyed by party member name — `AKI`/`BRAM`/`CORA` — drawn by `drawMasqueCard()`
-on the ASPECTS screen), and `MAESTRO_ROWS`/`MAESTRO_PAL` (the hooded watermark
-figure drawn behind the title in `drawVelvet()`). When adding a new tile type
-or party member, add sprite data here rather than falling back to emoji/text
-glyphs — `glyph` fields in `MASQUES`/`ASPECTS` still exist and are used in
-compact HTML contexts (STATS screen, battle-token labels) where a full pixel
-sprite doesn't fit.
+All character/object art is hand-authored and rendered with plain Canvas 2D
+calls — there are no image files, sprite sheets, or data-URI assets anywhere
+in the file, keeping the single-file/no-external-assets rule intact. Two
+techniques coexist:
+
+Tile icons and the Azure Room watermark are blocky pixel sprites via
+`drawPixelArt(rows, pal, x, y, ps)` (CANVAS/RENDERING section): `rows` is an
+array of equal-length strings where each character is a key into the `pal`
+palette object (`'.'` = transparent), and `ps` is the on-screen size of one
+pixel. Sprite data lives in the DATA section (right after `THEMES`) and is
+built once at load time: `mirrorH(half)` mirrors a half-row into a symmetric
+full row, `pxFillRow`/`pxSetCh` build/tweak individual rows, and
+`pxOutline`/`pxShadeLeft`/`finishSprite` add a dark 1px outline pass and a
+shadow-left/light-right two-tone shade split. This produced `TILE_ICONS`
+(keyed by map tile character `V`/`H`/`T`/`B`/`>` — door/spring/chest/
+boss-gate/stairs — each with `rows`, `pal`, and a `glow` backlight color,
+drawn by `drawSpecials()`) and `MAESTRO_ROWS`/`MAESTRO_PAL` (the hooded
+watermark figure drawn behind the title in `drawVelvet()`).
+
+Party member portraits on the ASPECTS screen are smooth vector illustrations
+instead — anime-style academy busts (blazer, collar, tie) drawn with
+`CTX.ellipse`/`quadraticCurveTo`/`arc` paths rather than a pixel grid, since a
+blocky grid can't produce curved linework at this size. `drawVectorBust(cx,
+cy, s, spec)` (CANVAS/RENDERING section, right after the pixel-art helpers)
+draws the shared anatomy (hair-back volume, blazer, shirt/tie, neck, face,
+eyes, brows, mouth, a clipped shading overlay); `PORTRAIT_SPECS` (DATA
+section, keyed by party member name — `AKI`/`BRAM`/`CORA`) supplies each
+character's colors and a `bangs(hair, outline)` callback that draws their
+distinct hair silhouette on top. `drawMasqueCard()` calls `drawVectorBust`
+directly (no intermediate sprite data to precompute). When adding a new tile
+type, add pixel sprite data; when adding a new party member, add a
+`PORTRAIT_SPECS` entry with a new `bangs()` shape rather than falling back to
+emoji/text glyphs — `glyph` fields in `MASQUES`/`ASPECTS` still exist and are
+used in compact HTML contexts (STATS screen, battle-token labels) where a
+full portrait doesn't fit.
 
 ### Exploration / dungeon generation
 
