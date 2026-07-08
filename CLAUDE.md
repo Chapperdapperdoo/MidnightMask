@@ -86,15 +86,13 @@ clipped to each wall segment. `drawFront`/`drawSide` take the animation
 timestamp `t` so decor can animate (e.g. the psychedelic hue rotation);
 `draw3D(t)` is what threads `t` down from `drawScene`.
 
-### Pixel art and vector portraits (no image assets)
+### Pixel art (no image assets)
 
-All character/object art is hand-authored and rendered with plain Canvas 2D
-calls — there are no image files, sprite sheets, or data-URI assets anywhere
-in the file, keeping the single-file/no-external-assets rule intact. Two
-techniques coexist:
-
-Tile icons and the Azure Room watermark are blocky pixel sprites via
-`drawPixelArt(rows, pal, x, y, ps)` (CANVAS/RENDERING section): `rows` is an
+All non-portrait art (tile icons, the Azure Room watermark) is hand-authored
+pixel art rendered with plain `CTX.fillRect` calls — there are no image
+files, sprite sheets, or data-URI assets anywhere in the file, keeping the
+single-file/no-external-assets rule intact. `drawPixelArt(rows, pal, x, y,
+ps)` (CANVAS/RENDERING section) is the one generic renderer: `rows` is an
 array of equal-length strings where each character is a key into the `pal`
 palette object (`'.'` = transparent), and `ps` is the on-screen size of one
 pixel. Sprite data lives in the DATA section (right after `THEMES`) and is
@@ -107,22 +105,13 @@ boss-gate/stairs — each with `rows`, `pal`, and a `glow` backlight color,
 drawn by `drawSpecials()`) and `MAESTRO_ROWS`/`MAESTRO_PAL` (the hooded
 watermark figure drawn behind the title in `drawVelvet()`).
 
-Party member portraits on the ASPECTS screen are smooth vector illustrations
-instead — anime-style academy busts (blazer, collar, tie) drawn with
-`CTX.ellipse`/`quadraticCurveTo`/`arc` paths rather than a pixel grid, since a
-blocky grid can't produce curved linework at this size. `drawVectorBust(cx,
-cy, s, spec)` (CANVAS/RENDERING section, right after the pixel-art helpers)
-draws the shared anatomy (hair-back volume, blazer, shirt/tie, neck, face,
-eyes, brows, mouth, a clipped shading overlay); `PORTRAIT_SPECS` (DATA
-section, keyed by party member name — `AKI`/`BRAM`/`CORA`) supplies each
-character's colors and a `bangs(hair, outline)` callback that draws their
-distinct hair silhouette on top. `drawMasqueCard()` calls `drawVectorBust`
-directly (no intermediate sprite data to precompute). When adding a new tile
-type, add pixel sprite data; when adding a new party member, add a
-`PORTRAIT_SPECS` entry with a new `bangs()` shape rather than falling back to
-emoji/text glyphs — `glyph` fields in `MASQUES`/`ASPECTS` still exist and are
-used in compact HTML contexts (STATS screen, battle-token labels) where a
-full portrait doesn't fit.
+Party member and aspect "portraits" are just their `glyph` field (a kanji
+character, e.g. `Aeneas: '焰'`) drawn large via `CTX.fillText` — used by
+`drawMasqueCard()` on the ASPECTS screen (colored/backlit by the masque's
+resistance-element color from `ELEM_COLOR`) and inline at small size in the
+STATS screen and battle-token labels. There's no separate sprite/illustration
+system for characters; when adding a new masque or aspect, just give it a
+`glyph`.
 
 ### Exploration / dungeon generation
 

@@ -105,13 +105,13 @@ var SKILLS={
 };
 
 var MASQUES={
- 'Aeneas':{glyph:'\ud83d\udd25',skills:['Cinder','Cleave'],res:['fire'],weak:['ice'],b:{str:2,mag:2}},
- 'Ajax':{glyph:'\ud83d\udee1\ufe0f',skills:['Cleave','Rend'],res:['phys'],weak:['elec'],b:{hp:8,str:3}},
- 'Apsaras':{glyph:'\ud83d\udca7',skills:['Frostbite','Mend'],res:['ice'],weak:['fire'],b:{sp:6,mag:2}},
- 'Sylph':{glyph:'\ud83c\udf2c\ufe0f',skills:['Galecut','Mend'],res:['wind'],weak:['elec'],b:{agi:3,sp:4}},
- 'Valkyrie':{glyph:'\u26a1',skills:['Voltline','Stormcall','Cleave'],res:['elec'],weak:['wind'],b:{str:3,agi:2}},
- 'Fenrir':{glyph:'\u2744\ufe0f',skills:['Frostbite','Torrent','Rend'],res:['ice','phys'],weak:['fire'],b:{str:4,agi:3,hp:6}},
- 'Hecate':{glyph:'\ud83d\udd6f\ufe0f',skills:['Flame Lash','Mend All','Rekindle'],res:['fire','ice'],weak:[],b:{mag:5,sp:10}}
+ 'Aeneas':{glyph:'\u7130',skills:['Cinder','Cleave'],res:['fire'],weak:['ice'],b:{str:2,mag:2}},
+ 'Ajax':{glyph:'\u76fe',skills:['Cleave','Rend'],res:['phys'],weak:['elec'],b:{hp:8,str:3}},
+ 'Apsaras':{glyph:'\u6cc9',skills:['Frostbite','Mend'],res:['ice'],weak:['fire'],b:{sp:6,mag:2}},
+ 'Sylph':{glyph:'\u98a8',skills:['Galecut','Mend'],res:['wind'],weak:['elec'],b:{agi:3,sp:4}},
+ 'Valkyrie':{glyph:'\u96f7',skills:['Voltline','Stormcall','Cleave'],res:['elec'],weak:['wind'],b:{str:3,agi:2}},
+ 'Fenrir':{glyph:'\u6c37',skills:['Frostbite','Torrent','Rend'],res:['ice','phys'],weak:['fire'],b:{str:4,agi:3,hp:6}},
+ 'Hecate':{glyph:'\u70ac',skills:['Flame Lash','Mend All','Rekindle'],res:['fire','ice'],weak:[],b:{mag:5,sp:10}}
 };
 
 var ASPECTS={
@@ -320,83 +320,6 @@ var TILE_ICONS={
   icon.rows=finishSprite(icon.half.map(mirrorH), icon.dark, 'X');
  }
 })();
-/* Vector busts: anime-style academy portraits drawn with arcs/bezier
-   curves rather than a pixel grid. Each entry supplies colors plus a
-   bangs() callback that draws that character's hair silhouette. */
-function bustShape(path,fill,outline){
- CTX.beginPath(); path(); CTX.closePath();
- CTX.fillStyle=fill; CTX.fill();
- CTX.lineWidth=1.6; CTX.strokeStyle=outline; CTX.stroke();
-}
-function drawVectorBust(cx,cy,s,spec){
- CTX.save();
- CTX.translate(cx,cy); CTX.scale(s,s);
- CTX.lineJoin='round'; CTX.lineCap='round';
- var ol=spec.outline;
- bustShape(function(){ CTX.ellipse(0,-6,27,30,0,0,Math.PI*2); }, spec.hair, ol);
- bustShape(function(){
-  CTX.moveTo(-42,74); CTX.lineTo(-34,34);
-  CTX.quadraticCurveTo(-20,42,-7,40); CTX.lineTo(0,58); CTX.lineTo(7,40);
-  CTX.quadraticCurveTo(20,42,34,34); CTX.lineTo(42,74); CTX.lineTo(-42,74);
- }, spec.uniform, ol);
- bustShape(function(){ CTX.moveTo(-7,40); CTX.lineTo(0,28); CTX.lineTo(7,40); CTX.lineTo(0,58); }, '#eef1f6', ol);
- bustShape(function(){ CTX.moveTo(-3,40); CTX.lineTo(3,40); CTX.lineTo(2,58); CTX.lineTo(-2,58); }, spec.tie, ol);
- bustShape(function(){ CTX.moveTo(-8,18); CTX.lineTo(8,18); CTX.lineTo(10,34); CTX.lineTo(-10,34); }, spec.skin, ol);
- bustShape(function(){ CTX.ellipse(0,-6,20,24,0,0,Math.PI*2); }, spec.skin, ol);
- spec.bangs(spec.hair,ol);
- CTX.strokeStyle=ol; CTX.lineWidth=2;
- [-9,9].forEach(function(dx){
-  CTX.beginPath(); CTX.moveTo(dx-4,-11); CTX.quadraticCurveTo(dx,-14,dx+4,-11); CTX.stroke();
- });
- [-9,9].forEach(function(dx){
-  CTX.beginPath();
-  CTX.moveTo(dx-5,-2); CTX.quadraticCurveTo(dx,-9,dx+5,-2); CTX.quadraticCurveTo(dx,1,dx-5,-2); CTX.closePath();
-  CTX.fillStyle='#fff'; CTX.fill(); CTX.lineWidth=1.2; CTX.strokeStyle=ol; CTX.stroke();
-  CTX.beginPath(); CTX.arc(dx,-4.5,3,0,Math.PI*2); CTX.fillStyle=spec.eye; CTX.fill();
-  CTX.beginPath(); CTX.arc(dx,-4.5,1.3,0,Math.PI*2); CTX.fillStyle='#140905'; CTX.fill();
-  CTX.beginPath(); CTX.arc(dx-1,-5.5,0.7,0,Math.PI*2); CTX.fillStyle='#fff'; CTX.fill();
- });
- CTX.beginPath(); CTX.moveTo(-3,11); CTX.quadraticCurveTo(0,13,3,11);
- CTX.lineWidth=1.3; CTX.strokeStyle=spec.mouth; CTX.stroke();
- CTX.save();
- CTX.beginPath(); CTX.ellipse(0,-6,20,24,0,0,Math.PI*2); CTX.clip();
- CTX.fillStyle='rgba(10,8,20,0.16)'; CTX.fillRect(-24,-32,24,50);
- CTX.restore();
- CTX.restore();
-}
-var PORTRAIT_SPECS={
- 'AKI':{
-  skin:'#d9a06c',hair:'#c9502a',uniform:'#7a1620',tie:'#f0c860',eye:'#f4732e',mouth:'#7a3020',outline:'#1a0d08',
-  bangs:function(hair,ol){
-   bustShape(function(){
-    CTX.moveTo(-20,-16); CTX.lineTo(-16,-26); CTX.lineTo(-11,-17); CTX.lineTo(-6,-28); CTX.lineTo(0,-16);
-    CTX.lineTo(6,-28); CTX.lineTo(11,-17); CTX.lineTo(16,-26); CTX.lineTo(20,-16);
-    CTX.quadraticCurveTo(20,-10,10,-16); CTX.quadraticCurveTo(0,-20,-10,-16); CTX.quadraticCurveTo(-20,-10,-20,-16);
-   }, hair, ol);
-  }
- },
- 'BRAM':{
-  skin:'#c9a877',hair:'#20222c',uniform:'#333f52',tie:'#c9d4ee',eye:'#4a5a78',mouth:'#3a2420',outline:'#050506',
-  bangs:function(hair,ol){
-   bustShape(function(){
-    CTX.moveTo(-20,-12); CTX.quadraticCurveTo(-18,-28,-2,-26);
-    CTX.quadraticCurveTo(14,-26,20,-16); CTX.quadraticCurveTo(18,-12,6,-17);
-    CTX.quadraticCurveTo(-2,-21,-10,-16); CTX.quadraticCurveTo(-18,-12,-20,-12);
-   }, hair, ol);
-  }
- },
- 'CORA':{
-  skin:'#dcc4a0',hair:'#1a5c64',uniform:'#1f3f63',tie:'#eafffb',eye:'#4bc9c0',mouth:'#2a3a3a',outline:'#04080a',
-  bangs:function(hair,ol){
-   bustShape(function(){
-    CTX.moveTo(-16,-18); CTX.quadraticCurveTo(-8,-28,0,-22);
-    CTX.quadraticCurveTo(8,-28,16,-18); CTX.quadraticCurveTo(10,-14,0,-18); CTX.quadraticCurveTo(-10,-14,-16,-18);
-   }, hair, ol);
-   bustShape(function(){ CTX.moveTo(-22,-16); CTX.quadraticCurveTo(-28,10,-20,32); CTX.quadraticCurveTo(-25,6,-18,-14); }, hair, ol);
-   bustShape(function(){ CTX.moveTo(22,-16); CTX.quadraticCurveTo(28,10,20,32); CTX.quadraticCurveTo(25,6,18,-14); }, hair, ol);
-  }
- }
-};
 var MAESTRO_PAL={H:'#242a52',M:'#e8e2d4',E:'#04050a',j:'#12152c',X:'#020208'};
 var MAESTRO_ROWS=(function(){
  var w=17, hoodW=[2,4,6,8,9,9,9,9], cloakW=[10,11,12,13,14,15,16,16,16,16];
@@ -1002,9 +925,11 @@ function drawMasqueCard(c,x,y,w,t){
  var fx=x+8, fy=y, fw=w-16, fh=100;
  CTX.fillStyle='rgba(255,255,255,0.03)'; CTX.fillRect(fx,fy,fw,fh);
  CTX.strokeStyle=ec.glow; CTX.lineWidth=1.4; CTX.strokeRect(fx+0.5,fy+0.5,fw-1,fh-1);
- var spec=PORTRAIT_SPECS[c.name];
+ CTX.font='52px Georgia'; CTX.textBaseline='middle';
+ CTX.fillStyle=ec.fill; CTX.shadowColor=ec.glow; CTX.shadowBlur=14;
  var bob=Math.sin(t/600+c.name.charCodeAt(0))*2;
- if(spec) drawVectorBust(cx, fy+34+bob, 0.82, spec);
+ CTX.fillText(m.glyph,cx,fy+fh/2+bob);
+ CTX.shadowBlur=0;
  CTX.textBaseline='alphabetic';
  CTX.font='600 12px Georgia'; CTX.fillStyle='#e8e4da';
  CTX.fillText(c.name+'  L'+c.lv,cx,fy+fh+18);
