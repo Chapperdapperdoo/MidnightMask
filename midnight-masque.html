@@ -115,14 +115,14 @@ var MASQUES={
 };
 
 var ASPECTS={
- 'Slime':{glyph:'\u6ce5',lv:2,hp:30,atk:6,def:3,agi:3,dex:3,weak:['fire'],res:['phys'],pers:'foolish',rank:1,elem:'phys'},
- 'Pixie':{glyph:'\u5996',lv:2,hp:20,atk:7,def:2,agi:8,dex:8,weak:['wind'],res:['elec'],pers:'timid',rank:1,elem:'elec'},
- 'Goblin':{glyph:'\u9b3c',lv:3,hp:34,atk:8,def:4,agi:5,dex:5,weak:['fire'],res:[],pers:'irritable',rank:2,elem:'phys'},
- 'Kelpie':{glyph:'\u99ac',lv:5,hp:44,atk:10,def:5,agi:7,dex:7,weak:['elec'],res:['ice'],pers:'wise',rank:3,elem:'ice'},
- 'Nekomata':{glyph:'\u732b',lv:6,hp:40,atk:11,def:4,agi:10,dex:10,weak:['ice'],res:['phys'],pers:'foolish',rank:3,elem:'phys'},
- 'Wight':{glyph:'\u6b7b',lv:8,hp:58,atk:13,def:6,agi:6,dex:6,weak:['fire'],res:['ice','phys'],pers:'wise',rank:4,elem:'ice'},
- 'Fenrir':{glyph:'\u72fc',lv:10,hp:72,atk:15,def:6,agi:11,dex:11,weak:['fire'],res:['ice'],pers:'irritable',rank:5,elem:'ice'},
- 'Moon Sovereign':{glyph:'\u6708',lv:13,hp:340,atk:16,def:7,agi:9,dex:9,weak:[],res:['elec','wind'],pers:null,rank:0,elem:'phys',boss:true}
+ 'Slime':{glyph:'\ud83d\udfe2',lv:2,hp:30,atk:6,def:3,agi:3,dex:3,weak:['fire'],res:['phys'],pers:'foolish',rank:1,elem:'phys'},
+ 'Pixie':{glyph:'\ud83e\uddda',lv:2,hp:20,atk:7,def:2,agi:8,dex:8,weak:['wind'],res:['elec'],pers:'timid',rank:1,elem:'elec'},
+ 'Goblin':{glyph:'\ud83d\udc79',lv:3,hp:34,atk:8,def:4,agi:5,dex:5,weak:['fire'],res:[],pers:'irritable',rank:2,elem:'phys'},
+ 'Kelpie':{glyph:'\ud83d\udc34',lv:5,hp:44,atk:10,def:5,agi:7,dex:7,weak:['elec'],res:['ice'],pers:'wise',rank:3,elem:'ice'},
+ 'Nekomata':{glyph:'\ud83d\udc31',lv:6,hp:40,atk:11,def:4,agi:10,dex:10,weak:['ice'],res:['phys'],pers:'foolish',rank:3,elem:'phys'},
+ 'Wight':{glyph:'\ud83d\udc80',lv:8,hp:58,atk:13,def:6,agi:6,dex:6,weak:['fire'],res:['ice','phys'],pers:'wise',rank:4,elem:'ice'},
+ 'Fenrir':{glyph:'\ud83d\udc3a',lv:10,hp:72,atk:15,def:6,agi:11,dex:11,weak:['fire'],res:['ice'],pers:'irritable',rank:5,elem:'ice'},
+ 'Moon Sovereign':{glyph:'\ud83c\udf15',lv:13,hp:340,atk:16,def:7,agi:9,dex:9,weak:[],res:['elec','wind'],pers:null,rank:0,elem:'phys',boss:true}
 };
 
 var POOLS=[
@@ -264,6 +264,77 @@ var THEMES=[
   decor:'psych'
  }
 ];
+
+/* ============ PIXEL ART ============ */
+/* SNES-style sprites: mirrored silhouettes + a dark 1px outline pass +
+   a two-tone shade split (light from the right), like SMT If...'s portraits. */
+function mirrorH(half){ return half+half.slice(0,-1).split('').reverse().join(''); }
+function pxFillRow(n,w,ch,base){
+ var r=(base||'').split(''); if(!r.length){for(var i=0;i<w;i++) r.push('.');}
+ for(var col=w-n; col<w; col++) r[col]=ch;
+ return r.join('');
+}
+function pxSetCh(rows,r,c,ch){ var a=rows[r].split(''); a[c]=ch; rows[r]=a.join(''); }
+function pxOutline(rows,ch){
+ var h=rows.length, w=rows[0].length, i,j;
+ var grid=rows.map(function(r){return r.split('');});
+ var out=rows.map(function(r){return r.split('');});
+ for(i=0;i<h;i++){
+  for(j=0;j<w;j++){
+   if(grid[i][j]!=='.') continue;
+   var n=(i>0&&grid[i-1][j]!=='.')||(i<h-1&&grid[i+1][j]!=='.')||(j>0&&grid[i][j-1]!=='.')||(j<w-1&&grid[i][j+1]!=='.');
+   if(n) out[i][j]=ch;
+  }
+ }
+ return out.map(function(a){return a.join('');});
+}
+function pxShadeLeft(rows,darkMap){
+ var w=rows[0].length, center=Math.floor(w/2);
+ return rows.map(function(row){
+  var a=row.split('');
+  for(var c=0;c<center;c++){ if(darkMap[a[c]]) a[c]=darkMap[a[c]]; }
+  return a.join('');
+ });
+}
+function finishSprite(rows,darkMap,outlineCh){ return pxOutline(pxShadeLeft(rows,darkMap),outlineCh); }
+var TILE_ICONS={
+ 'V':{glow:'#6a8dff',pal:{F:'#7d9dff',f:'#40509a',W:'#6a4528',w:'#8a6038',x:'#3a2415',G:'#f0c860',X:'#050608'},half:[
+  '..FFFF','.FFWWW','FFWWwW','FWWWwW','FWWWwW','FWWWwW','FWWWwW','FWWWwW','FWWWwW','FWWWwW','FFFFFF'
+ ],dark:{F:'f',W:'x',w:'x'}},
+ 'H':{glow:'#57d0a0',pal:{R:'#5c6a80',r:'#333d4a',W:'#57d0a0',w:'#8be8c8',z:'#357a5c',X:'#040a08'},half:[
+  '......','...RRR','..RWWW','.RWwWW','.RWWwW','.RWwWW','.RWWwW','.RWwWW','..RWWW','...RRR','......'
+ ],dark:{R:'r',W:'z',w:'z'}},
+ 'T':{glow:'#d8b45a',pal:{B:'#7a5228',b:'#c98f42',M:'#dfe7f7',G:'#f0c860',d:'#4a2e14',e:'#8a5e28',y:'#8a97b8',X:'#0a0602'},half:[
+  '......','.BBBBB','BBBBBB','BMMMMM','Bbbbbb','BbGbbb','Bbbbbb','Bbbbbb','BMMMMM','BBBBBB','......'
+ ],dark:{B:'d',b:'e',M:'y'}},
+ 'B':{glow:'#e0364a',pal:{G:'#4a1420',g:'#9a2030',d:'#220a0e',e:'#5a1620',X:'#020204'},half:[
+  '.G.G.G','GGGGGG','GgGgGg','GGGGGG','GgGgGg','GGGGGG','GgGgGg','GGGGGG','GgGgGg','GGGGGG','.G.G.G'
+ ],dark:{G:'d',g:'e'}},
+ '>':{glow:'#c9d4ee',pal:{S:'#dfe7f7',z:'#8a97b8',X:'#04060a'},half:[
+  '......','.....S','....SS','...SSS','..SSSS','.SSSSS','SSSSSS','......','......','......','......'
+ ],dark:{S:'z'}}
+};
+(function(){
+ for(var k in TILE_ICONS){
+  var icon=TILE_ICONS[k];
+  icon.rows=finishSprite(icon.half.map(mirrorH), icon.dark, 'X');
+ }
+})();
+var MAESTRO_PAL={H:'#242a52',M:'#e8e2d4',E:'#04050a',j:'#12152c',X:'#020208'};
+var MAESTRO_ROWS=(function(){
+ var w=17, hoodW=[2,4,6,8,9,9,9,9], cloakW=[10,11,12,13,14,15,16,16,16,16];
+ var rows=[],i;
+ for(i=0;i<hoodW.length;i++) rows.push(pxFillRow(hoodW[i],w,'H'));
+ for(i=0;i<cloakW.length;i++) rows.push(pxFillRow(cloakW[i],w,'H'));
+ var maskW=[3,4,6,6,4];
+ for(i=0;i<maskW.length;i++){
+  var ri=3+i, arr=rows[ri].split('');
+  for(var col=w-maskW[i]; col<w; col++) arr[col]='M';
+  rows[ri]=arr.join('');
+ }
+ pxSetCh(rows,5,w-3,'E');
+ return finishSprite(rows.map(mirrorH),{H:'j'},'X');
+})();
 
 /* ============ STATE ============ */
 var MODE='intro', UI=[], G=null, B=null, LOGS=[], MUTED=false, DRONE=null;
@@ -517,6 +588,17 @@ function draw3D(t){
   rung(SCL[z+1],a*0.35);
  }
 }
+function drawPixelArt(rows,pal,x,y,ps){
+ for(var r=0;r<rows.length;r++){
+  var row=rows[r];
+  for(var c=0;c<row.length;c++){
+   var ch=row.charAt(c);
+   if(ch==='.'||!pal[ch]) continue;
+   CTX.fillStyle=pal[ch];
+   CTX.fillRect(x+c*ps, y+r*ps, ps+0.6, ps+0.6);
+  }
+ }
+}
 function drawSpecials(){
  for(var d=0; d<=2; d++){
   var blocked=false;
@@ -532,15 +614,17 @@ function drawSpecials(){
    var sc = d===0 ? 1.0 : SCL[d];
    var cy=H/2 + H/2*sc*0.7;
    var size=Math.round(34*sc);
-   var col = c==='V' ? '#6a8dff' : c==='H' ? '#57d0a0' : c==='T' ? '#d8b45a' : c==='B' ? '#e0364a' : '#c9d4ee';
-   var sym = c==='V' ? '\u9580' : c==='H' ? '\u6cc9' : c==='T' ? '\u5323' : c==='B' ? '\u6708' : '\u6bb5';
+   var icon=TILE_ICONS[c];
+   var ps=size*0.13, gw=icon.rows[0].length, gh=icon.rows.length;
+   var left=W/2-gw*ps/2, top=(cy-size*0.7)-gh*ps/2;
    CTX.save();
    CTX.globalAlpha=0.92;
-   CTX.fillStyle=col;
-   CTX.font=size+'px Georgia';
-   CTX.textAlign='center'; CTX.textBaseline='middle';
-   CTX.shadowColor=col; CTX.shadowBlur=12*sc;
-   CTX.fillText(sym, W/2, cy - size*0.7);
+   var glowR=Math.max(gw,gh)*ps*0.6;
+   var rg=CTX.createRadialGradient(left+gw*ps/2,top+gh*ps/2,0,left+gw*ps/2,top+gh*ps/2,glowR);
+   rg.addColorStop(0, icon.glow+'55'); rg.addColorStop(1, icon.glow+'00');
+   CTX.fillStyle=rg; CTX.fillRect(left-glowR*0.4,top-glowR*0.4,gw*ps+glowR*0.8,gh*ps+glowR*0.8);
+   drawPixelArt(icon.rows, icon.pal, left, top, ps);
+   if(c==='V'){ CTX.fillStyle='#f0c860'; CTX.fillRect(left+8*ps, top+6*ps, ps, ps); }
    CTX.restore();
   }
  }
@@ -790,9 +874,15 @@ function drawVelvet(t){
   CTX.fillStyle='rgba(140,170,255,'+(0.06+0.05*Math.sin(t/700+i)).toFixed(3)+')';
   CTX.fillRect(xx, H-yy, 2, 2);
  }
+ var mgw=MAESTRO_ROWS[0].length, mps=9;
+ CTX.save(); CTX.globalAlpha=0.42;
+ drawPixelArt(MAESTRO_ROWS, MAESTRO_PAL, W/2-mgw*mps/2, 118, mps);
+ CTX.restore();
+ for(var fx=0; fx<W; fx+=16){
+  CTX.fillStyle=(Math.round(fx/16)%2===0)?'rgba(120,150,255,0.05)':'rgba(120,150,255,0.02)';
+  CTX.fillRect(fx,H-14,16,14);
+ }
  CTX.textAlign='center'; CTX.textBaseline='alphabetic';
- CTX.fillStyle='rgba(120,150,255,0.15)'; CTX.font='150px Georgia';
- CTX.fillText('\u9762', W/2, 205);
  CTX.fillStyle='#b9cdf0'; CTX.font='600 24px Georgia';
  CTX.fillText('T H E   A Z U R E   R O O M', W/2, 58);
  CTX.fillStyle='#7d90c8'; CTX.font='italic 13px Georgia';
@@ -825,12 +915,63 @@ function drawVictory(t){
  CTX.fillStyle='#7a8199'; CTX.font='italic 13px Georgia';
  CTX.fillText('"Until the next mask, child." \u2014 the Maestro',W/2,288);
 }
+function drawMasqueCard(c,x,y,w,t){
+ var m=mq(c);
+ var ec=ELEM_COLOR[m.res[0]]||{fill:'#dfe7f7',glow:'#5a7df0'};
+ var cx=x+w/2;
+ CTX.save();
+ CTX.globalAlpha=c.hp<=0?0.4:1;
+ CTX.textAlign='center';
+ var fx=x+8, fy=y, fw=w-16, fh=100;
+ CTX.fillStyle='rgba(255,255,255,0.03)'; CTX.fillRect(fx,fy,fw,fh);
+ CTX.strokeStyle=ec.glow; CTX.lineWidth=1.4; CTX.strokeRect(fx+0.5,fy+0.5,fw-1,fh-1);
+ CTX.font='52px Georgia'; CTX.textBaseline='middle';
+ CTX.fillStyle=ec.fill; CTX.shadowColor=ec.glow; CTX.shadowBlur=14;
+ var bob=Math.sin(t/600+c.name.charCodeAt(0))*2;
+ CTX.fillText(m.glyph,cx,fy+fh/2+bob);
+ CTX.shadowBlur=0;
+ CTX.textBaseline='alphabetic';
+ CTX.font='600 12px Georgia'; CTX.fillStyle='#e8e4da';
+ CTX.fillText(c.name+'  L'+c.lv,cx,fy+fh+18);
+ CTX.font='11px Georgia'; CTX.fillStyle='#aebbd8';
+ CTX.fillText(c.masque,cx,fy+fh+33);
+ var bw=w-24, bx=x+12, by=fy+fh+42;
+ CTX.fillStyle='#141827'; CTX.fillRect(bx,by,bw,5);
+ CTX.fillStyle='#d43148'; CTX.fillRect(bx,by,bw*Math.max(0,c.hp)/maxHp(c),5);
+ CTX.textAlign='left'; CTX.font='8px ui-monospace,Menlo,monospace'; CTX.fillStyle='#7a8199';
+ CTX.fillText('HP '+Math.max(0,c.hp)+'/'+maxHp(c),bx,by+13);
+ var by2=by+18;
+ CTX.fillStyle='#141827'; CTX.fillRect(bx,by2,bw,5);
+ CTX.fillStyle='#4f8fd0'; CTX.fillRect(bx,by2,bw*c.sp/maxSp(c),5);
+ CTX.fillStyle='#7a8199';
+ CTX.fillText('SP '+c.sp+'/'+maxSp(c),bx,by2+13);
+ var sy=by2+26;
+ CTX.font='8.5px ui-monospace,Menlo,monospace'; CTX.fillStyle='#c9d4ee';
+ CTX.fillText('STR'+stat(c,'str')+' MAG'+stat(c,'mag')+' AGI'+stat(c,'agi'),bx,sy);
+ CTX.fillText('DEF'+charDef(c)+' DEX'+stat(c,'dex'),bx,sy+12);
+ CTX.fillStyle='#7a8199';
+ CTX.fillText('Res '+elemList(m.res),bx,sy+28);
+ CTX.fillText('Weak '+elemList(m.weak),bx,sy+40);
+ CTX.restore();
+}
+function drawMasqueParty(t){
+ var g=CTX.createLinearGradient(0,0,0,H);
+ g.addColorStop(0,'#0a0d1c'); g.addColorStop(1,'#050609');
+ CTX.fillStyle=g; CTX.fillRect(0,0,W,H);
+ CTX.textAlign='center'; CTX.fillStyle='#c9d4ee'; CTX.font='600 16px Georgia';
+ CTX.fillText('THE MASKS WORN',W/2,22);
+ var colW=W/G.party.length;
+ CTX.strokeStyle='rgba(90,125,184,0.18)'; CTX.lineWidth=1;
+ for(var i=1;i<G.party.length;i++){ CTX.beginPath(); CTX.moveTo(i*colW,30); CTX.lineTo(i*colW,H-8); CTX.stroke(); }
+ for(var j=0;j<G.party.length;j++){ drawMasqueCard(G.party[j],j*colW,32,colW,t); }
+}
 function drawScene(t){
  if(MODE==='intro') drawIntro();
  else if(MODE==='title') drawTitle(t);
  else if(MODE==='explore'&&G){ draw3D(t); drawSpecials(); drawMinimap(); drawMoonHud(); }
  else if(MODE==='battle') drawBattle(t);
  else if(MODE==='velvet'&&G) drawVelvet(t);
+ else if(MODE==='masque'&&G) drawMasqueParty(t);
  else if(MODE==='gameover') drawGameover(t);
  else if(MODE==='victory') drawVictory(t);
 }
@@ -960,6 +1101,7 @@ function refreshCtl(){
  if(MODE==='gameover'){ rows([btnEl('RETURN TO TITLE',toTitle,'red')]); el('hint').textContent=''; return; }
  if(MODE==='victory'){ rows([btnEl('RETURN TO TITLE',toTitle,'blue')]); el('hint').textContent=''; return; }
  if(MODE==='velvet'){ ctlVelvet(); return; }
+ if(MODE==='masque'){ ctlMasqueParty(); return; }
  if(MODE==='battle'){ ctlBattle(UI[UI.length-1]||{t:'main'}); return; }
  var top=UI[UI.length-1];
  if(!top){ ctlDpad(); return; }
@@ -990,7 +1132,8 @@ function ctlMenu(){
     btnEl('MASQUES',function(){UI.push({t:'mchar',ctx:'field'});SFX.sel();renderAll();}) ],
   [ btnEl('STATS',function(){UI.push({t:'stats'});SFX.sel();renderAll();}),
     btnEl('CARDS ('+G.cards.length+')',function(){UI.push({t:'cards'});SFX.sel();renderAll();}) ],
-  [ btnEl('OBOLS: '+G.coins,function(){},'dis') ],
+  [ btnEl('ASPECTS',function(){enterMasqueParty();}),
+    btnEl('OBOLS: '+G.coins,function(){},'dis') ],
   [ btnEl('SAVE',function(){saveGame();}), btnEl('LOAD',function(){loadGame();}) ],
   [ btnEl(MUTED?'SOUND: OFF':'SOUND: ON',toggleSound),
     btnEl('\u2716 CLOSE',popUI,'red') ]
@@ -1145,6 +1288,12 @@ function ctlStats(top){
 /* ============ AZURE ROOM ============ */
 function enterVelvet(){ MODE='velvet'; UI=[]; drone(false); SFX.card(); log('You step into the Azure Room. The Maestro inclines his head.'); renderAll(); }
 function leaveVelvet(){ MODE='explore'; UI=[]; if(!MUTED) drone(true); SFX.back(); log('You return to the catacomb.'); renderAll(); }
+function enterMasqueParty(){ MODE='masque'; UI=[]; drone(false); SFX.sel(); renderAll(); }
+function leaveMasqueParty(){ MODE='explore'; UI=[]; if(!MUTED) drone(true); SFX.back(); renderAll(); }
+function ctlMasqueParty(){
+ rows([ btnEl('✖ LEAVE',leaveMasqueParty,'red') ]);
+ el('hint').textContent='';
+}
 function ctlVelvet(){
  var top=UI[UI.length-1];
  if(top&&top.t==='fuseA'){ ctlFuse(top); return; }
@@ -1781,7 +1930,7 @@ function startNew(){
  placeAtStart();
  markExplored(); if(!MUTED) drone(true);
  log('You wake at the mouth of the catacombs. Three masks, one moon.');
- log('Tip: weaken an aspect, then CONTACT it \u2014 win its card, fuse masques at the Azure Room \u9580.');
+ log('Tip: weaken an aspect, then CONTACT it \u2014 win its card, fuse masques at the Azure Room \ud83d\udeaa.');
  log('The catacombs reshape themselves each time you enter \u2014 and there is no waking the fallen.');
  renderAll();
 }

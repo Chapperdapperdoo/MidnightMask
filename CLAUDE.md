@@ -61,7 +61,8 @@ per run (see "Exploration / dungeon generation").
 ### Global state, not modules
 
 Four globals hold all mutable state: `MODE` (a string state machine: `'intro'`,
-`'title'`, `'explore'`, `'battle'`, `'velvet'`, `'gameover'`, `'victory'`), `UI` (a stack of
+`'title'`, `'explore'`, `'battle'`, `'velvet'`, `'masque'`, `'gameover'`,
+`'victory'`), `UI` (a stack of
 menu-context objects, e.g. `{t:'items',ctx:'battle'}`), `G` (the save-game
 object: party, inventory, position, floor, moon phase, etc. — this whole object
 is JSON-serialized for save/load), and `B` (transient battle state, `null`
@@ -84,6 +85,33 @@ paint floor-specific detail (school windows, basement grime, psychedelic rings)
 clipped to each wall segment. `drawFront`/`drawSide` take the animation
 timestamp `t` so decor can animate (e.g. the psychedelic hue rotation);
 `draw3D(t)` is what threads `t` down from `drawScene`.
+
+### Pixel art (no image assets)
+
+All non-portrait art (tile icons, the Azure Room watermark) is hand-authored
+pixel art rendered with plain `CTX.fillRect` calls — there are no image
+files, sprite sheets, or data-URI assets anywhere in the file, keeping the
+single-file/no-external-assets rule intact. `drawPixelArt(rows, pal, x, y,
+ps)` (CANVAS/RENDERING section) is the one generic renderer: `rows` is an
+array of equal-length strings where each character is a key into the `pal`
+palette object (`'.'` = transparent), and `ps` is the on-screen size of one
+pixel. Sprite data lives in the DATA section (right after `THEMES`) and is
+built once at load time: `mirrorH(half)` mirrors a half-row into a symmetric
+full row, `pxFillRow`/`pxSetCh` build/tweak individual rows, and
+`pxOutline`/`pxShadeLeft`/`finishSprite` add a dark 1px outline pass and a
+shadow-left/light-right two-tone shade split. This produced `TILE_ICONS`
+(keyed by map tile character `V`/`H`/`T`/`B`/`>` — door/spring/chest/
+boss-gate/stairs — each with `rows`, `pal`, and a `glow` backlight color,
+drawn by `drawSpecials()`) and `MAESTRO_ROWS`/`MAESTRO_PAL` (the hooded
+watermark figure drawn behind the title in `drawVelvet()`).
+
+Party member and aspect "portraits" are just their `glyph` field (a kanji
+character, e.g. `Aeneas: '焰'`) drawn large via `CTX.fillText` — used by
+`drawMasqueCard()` on the ASPECTS screen (colored/backlit by the masque's
+resistance-element color from `ELEM_COLOR`) and inline at small size in the
+STATS screen and battle-token labels. There's no separate sprite/illustration
+system for characters; when adding a new masque or aspect, just give it a
+`glyph`.
 
 ### Exploration / dungeon generation
 
@@ -117,6 +145,16 @@ calls the matching `ctl*` function, which builds buttons via `rows()`/`btnEl()`
 and writes them into `#ctl`. Pushing `{t:'...'}` onto `UI` drills into a
 submenu; `popUI()` / Escape pops back out. Follow this pattern for any new menu
 rather than adding parallel UI state.
+
+Two different patterns exist for "screens," and which one to use depends on
+whether the dungeon view should stay visible underneath: a `UI`-stack entry
+(e.g. `{t:'stats'}`) renders as buttons/text in `#ctl` while `MODE` stays
+`'explore'`, so `draw3D` keeps rendering the hallway behind it — this is what
+STATS/CARDS/ITEMS do. A dedicated `MODE` value (e.g. `'velvet'` for the Azure
+Room, `'masque'` for the ASPECTS party-portrait screen) instead takes over
+`drawScene`'s canvas entirely with its own `draw*` function, with its own
+`enter*`/`leave*` pair setting `MODE` back to `'explore'`. Use a `MODE` switch
+when the screen should replace the exploration view rather than float above it.
 
 ### Battle flow
 
